@@ -56,7 +56,7 @@
         <div class="setting-item-full" id="customEndpointContainer" style="display: none;">
           <label for="customEndpoint">
             <span class="label-text">自定义 API 端点</span>
-            <span class="label-hint">完整的 API URL（模型名称在端点中指定）</span>
+            <span class="label-hint">完整的 API URL</span>
           </label>
           <input type="text" id="customEndpoint" placeholder="https://api.example.com/v1/chat/completions" class="input-full">
         </div>
@@ -64,11 +64,19 @@
         <div class="setting-item-full" id="apiModelContainer">
           <label for="apiModel">
             <span class="label-text">AI 模型</span>
-            <span class="label-hint">选择使用的 AI 模型</span>
+            <span class="label-hint" id="apiModelHint">选择使用的 AI 模型</span>
           </label>
           <select id="apiModel" class="select-full">
             <!-- 模型选项会根据供应商动态更新 -->
           </select>
+        </div>
+
+        <div class="setting-item-full" id="customModelContainer" style="display: none;">
+          <label for="customModel">
+            <span class="label-text">模型 ID</span>
+            <span class="label-hint">输入模型标识符，如：Pro/zai-org/GLM-4.7</span>
+          </label>
+          <input type="text" id="customModel" placeholder="Pro/zai-org/GLM-4.7" class="input-full">
         </div>
 
         <div class="api-hint">

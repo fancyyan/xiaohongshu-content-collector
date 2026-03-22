@@ -168,17 +168,18 @@ function updateProviderUI() {
   document.getElementById('apiKey').placeholder = providerConfig.keyPlaceholder;
   document.getElementById('apiKeyHint').textContent = `用于 ${providerConfig.name} API`;
 
-  // 更新自定义端点显示
+  // 更新自定义端点和模型显示
   const customEndpointContainer = document.getElementById('customEndpointContainer');
   const apiModelContainer = document.getElementById('apiModelContainer');
+  const customModelContainer = document.getElementById('customModelContainer');
 
   if (provider === 'custom') {
     customEndpointContainer.style.display = 'flex';
-    // 自定义供应商时隐藏模型选择（模型在端点中指定）
+    customModelContainer.style.display = 'flex';
     apiModelContainer.style.display = 'none';
   } else {
     customEndpointContainer.style.display = 'none';
-    // 非自定义供应商时显示模型选择
+    customModelContainer.style.display = 'none';
     apiModelContainer.style.display = 'flex';
   }
 
@@ -224,6 +225,7 @@ async function loadSettings() {
       document.getElementById('apiKey').value = config.apiConfig.apiKey || '';
       document.getElementById('apiModel').value = config.apiConfig.apiModel || 'google/gemini-2.0-flash-001';
       document.getElementById('customEndpoint').value = config.apiConfig.customEndpoint || '';
+      document.getElementById('customModel').value = config.apiConfig.customModel || '';
     }
   } catch (error) {
     console.error('加载设置失败:', error);
@@ -239,6 +241,7 @@ async function saveSettings() {
     const apiKey = document.getElementById('apiKey').value.trim();
     const apiModel = document.getElementById('apiModel').value;
     const customEndpoint = document.getElementById('customEndpoint').value.trim();
+    const customModel = document.getElementById('customModel').value.trim();
 
     // 校验 API Key
     if (!apiKey) {
@@ -247,11 +250,16 @@ async function saveSettings() {
       return;
     }
 
-    // 校验自定义端点
+    // 校验自定义端点和模型
     if (provider === 'custom') {
       if (!customEndpoint) {
         showToast('请填写自定义 API 端点');
         document.getElementById('customEndpoint').focus();
+        return;
+      }
+      if (!customModel) {
+        showToast('请填写模型 ID');
+        document.getElementById('customModel').focus();
         return;
       }
     }
@@ -261,7 +269,8 @@ async function saveSettings() {
       provider,
       apiKey,
       apiModel,
-      customEndpoint
+      customEndpoint,
+      customModel
     };
 
     // 判断配置是否改变
@@ -269,7 +278,8 @@ async function saveSettings() {
       apiTestStatus.lastTestedConfig.provider !== currentConfig.provider ||
       apiTestStatus.lastTestedConfig.apiKey !== currentConfig.apiKey ||
       apiTestStatus.lastTestedConfig.apiModel !== currentConfig.apiModel ||
-      apiTestStatus.lastTestedConfig.customEndpoint !== currentConfig.customEndpoint;
+      apiTestStatus.lastTestedConfig.customEndpoint !== currentConfig.customEndpoint ||
+      apiTestStatus.lastTestedConfig.customModel !== currentConfig.customModel;
 
     // 如果配置改变了，或者从未测试过，或者上次测试失败，则要求先测试
     if (configChanged || !apiTestStatus.tested || !apiTestStatus.success) {
@@ -306,8 +316,9 @@ async function saveSettings() {
       apiConfig: {
         provider: provider,
         apiKey: document.getElementById('apiKey').value.trim() || '',
-        apiModel: document.getElementById('apiModel').value || providerConfig.models[0].value,
+        apiModel: provider === 'custom' ? document.getElementById('customModel').value.trim() : document.getElementById('apiModel').value,
         customEndpoint: document.getElementById('customEndpoint').value.trim() || '',
+        customModel: document.getElementById('customModel').value.trim() || '',
         endpoint: provider === 'custom' ? document.getElementById('customEndpoint').value.trim() : providerConfig.endpoint,
       }
     };
@@ -502,6 +513,7 @@ async function testAPIConnection() {
   const apiKey = document.getElementById('apiKey').value.trim();
   const apiModel = document.getElementById('apiModel').value;
   const customEndpoint = document.getElementById('customEndpoint').value.trim();
+  const customModel = document.getElementById('customModel').value.trim();
   const resultDiv = document.getElementById('apiTestResult');
   const testBtn = document.getElementById('btnTestAPI');
 
@@ -513,11 +525,19 @@ async function testAPIConnection() {
     return;
   }
 
-  if (provider === 'custom' && !customEndpoint) {
-    resultDiv.textContent = '❌ 请先填写自定义 API 端点';
-    resultDiv.className = 'error';
-    resultDiv.style.display = 'block';
-    return;
+  if (provider === 'custom') {
+    if (!customEndpoint) {
+      resultDiv.textContent = '❌ 请先填写自定义 API 端点';
+      resultDiv.className = 'error';
+      resultDiv.style.display = 'block';
+      return;
+    }
+    if (!customModel) {
+      resultDiv.textContent = '❌ 请先填写模型 ID';
+      resultDiv.className = 'error';
+      resultDiv.style.display = 'block';
+      return;
+    }
   }
 
   // 显示测试中状态
@@ -530,6 +550,7 @@ async function testAPIConnection() {
   try {
     const providerConfig = API_PROVIDERS[provider];
     const endpoint = provider === 'custom' ? customEndpoint : providerConfig.endpoint;
+    const modelToUse = provider === 'custom' ? customModel : apiModel;
 
     // 构建测试请求
     let response;
@@ -543,14 +564,14 @@ async function testAPIConnection() {
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: apiModel,
+          model: modelToUse,
           max_tokens: 10,
           messages: [{ role: 'user', content: 'Hi' }]
         })
       });
     } else if (provider === 'google') {
       // Google AI API 格式
-      const modelEndpoint = `${endpoint}/${apiModel}:generateContent?key=${apiKey}`;
+      const modelEndpoint = `${endpoint}/${modelToUse}:generateContent?key=${apiKey}`;
       response = await fetch(modelEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -567,7 +588,7 @@ async function testAPIConnection() {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: apiModel,
+          model: modelToUse,
           messages: [{ role: 'user', content: 'Hi' }],
           max_tokens: 10
         })
@@ -585,7 +606,8 @@ async function testAPIConnection() {
         provider,
         apiKey,
         apiModel,
-        customEndpoint
+        customEndpoint,
+        customModel
       };
     } else {
       const errorData = await response.json().catch(() => ({}));
