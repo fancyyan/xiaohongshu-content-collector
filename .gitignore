@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 打包文件
+*.zip
+
+# 临时文件
+*-temp/
+temp/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志
+*.log
+
+# Node modules (如果有)
+node_modules/
+
+# 环境变量文件（虽然我们不使用，但预防性添加）
+.env
+.env.local
+.env.*.local
+
+# 打包脚本生成的临时目录
+xhs-collector-temp/

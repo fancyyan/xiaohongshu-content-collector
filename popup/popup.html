@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小红书收集器</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <!-- 头部 -->
+    <header class="header">
+      <div class="header-title">
+        <span class="logo">📕</span>
+        <h1>小红书收集器</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-settings" id="btnSettings" title="设置">
+          <span class="settings-icon">⚙️</span>
+          <span class="settings-text">设置</span>
+        </button>
+        <div class="header-status" id="status">
+          <span class="status-dot"></span>
+          <span class="status-text">检测中...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 统计面板 -->
+    <section class="stats-panel">
+      <div class="stat-card">
+        <span class="stat-num" id="totalPosts">0</span>
+        <span class="stat-label">已收集</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="sessionCaptures">0</span>
+        <span class="stat-label">本次新增</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="lastCapture">-</span>
+        <span class="stat-label">最近抓取</span>
+      </div>
+    </section>
+
+    <!-- 来源分布 -->
+    <section class="source-panel" id="sourcePanel">
+      <h3 class="section-title">来源分布</h3>
+      <div class="source-bars" id="sourceBars"></div>
+    </section>
+
+    <!-- 自动浏览 -->
+    <section class="auto-section">
+      <h3 class="section-title">自动浏览</h3>
+      <div class="auto-controls">
+        <div class="control-row">
+          <label>滚动速度</label>
+          <select id="scrollSpeed">
+            <option value="slow">慢速（安全）</option>
+            <option value="normal" selected>正常</option>
+            <option value="fast">快速</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <label>最大滚动次数</label>
+          <input type="number" id="maxScrolls" value="100" min="10" max="1000" step="10">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnStartScroll">▶ 开始自动浏览</button>
+          <button class="btn btn-secondary" id="btnStopScroll" disabled>⏹ 停止</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 导出 -->
+    <section class="export-section">
+      <h3 class="section-title">数据导出</h3>
+      <div class="export-grid">
+        <button class="export-btn" data-format="json">
+          <span class="export-icon">{ }</span>
+          <span class="export-name">JSON</span>
+          <span class="export-desc">完整数据</span>
+        </button>
+        <button class="export-btn" data-format="jsonl">
+          <span class="export-icon">📄</span>
+          <span class="export-name">JSONL</span>
+          <span class="export-desc">逐行格式</span>
+        </button>
+        <button class="export-btn" data-format="markdown">
+          <span class="export-icon">📝</span>
+          <span class="export-name">Markdown</span>
+          <span class="export-desc">可读文档</span>
+        </button>
+        <button class="export-btn" data-format="training">
+          <span class="export-icon">🤖</span>
+          <span class="export-name">训练数据</span>
+          <span class="export-desc">模型微调</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 底部操作 -->
+    <footer class="footer">
+      <button class="btn btn-text" id="btnScanNow">🔍 立即扫描</button>
+      <button class="btn btn-danger-text" id="btnClear">🗑 清空数据</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

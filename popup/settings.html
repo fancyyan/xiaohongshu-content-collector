@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>插件设置 - 小红书收集器</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-page">
+    <!-- 头部 -->
+    <header class="header">
+      <button class="btn-back" id="btnBack">← 返回</button>
+      <h1>插件设置</h1>
+      <button class="btn-save" id="btnSave">保存</button>
+    </header>
+
+    <!-- 设置内容 -->
+    <div class="settings-content">
+
+      <!-- AI 模型配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">🤖</span>
+          AI 模型配置
+        </h2>
+        <p class="section-desc">配置 AI 分析使用的模型和 API 密钥。</p>
+
+        <div class="setting-item-full">
+          <label for="apiProvider">
+            <span class="label-text">API 供应商</span>
+            <span class="label-hint">选择 API 服务提供商</span>
+          </label>
+          <select id="apiProvider" class="select-full">
+            <option value="openrouter">OpenRouter（推荐，支持多模型）</option>
+            <option value="anthropic">Anthropic（Claude 官方）</option>
+            <option value="openai">OpenAI（GPT 官方）</option>
+            <option value="google">Google AI（Gemini 官方）</option>
+            <option value="custom">自定义 API 端点</option>
+          </select>
+        </div>
+
+        <div class="setting-item-full">
+          <label for="apiKey">
+            <span class="label-text">API Key</span>
+            <span class="label-hint" id="apiKeyHint">用于 AI 多模态分析</span>
+          </label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="password" id="apiKey" placeholder="sk-..." class="input-full" style="flex: 1;">
+            <button class="btn-toggle-password" id="btnTogglePassword" type="button">👁️</button>
+            <button class="btn-test-api" id="btnTestAPI" type="button">测试连接</button>
+          </div>
+          <div id="apiTestResult" style="margin-top: 8px; font-size: 13px; display: none;"></div>
+        </div>
+
+        <div class="setting-item-full" id="customEndpointContainer" style="display: none;">
+          <label for="customEndpoint">
+            <span class="label-text">自定义 API 端点</span>
+            <span class="label-hint">完整的 API URL</span>
+          </label>
+          <input type="text" id="customEndpoint" placeholder="https://api.example.com/v1/chat/completions" class="input-full">
+        </div>
+
+        <div class="setting-item-full">
+          <label for="apiModel">
+            <span class="label-text">AI 模型</span>
+            <span class="label-hint">选择使用的 AI 模型</span>
+          </label>
+          <select id="apiModel" class="select-full">
+            <!-- 模型选项会根据供应商动态更新 -->
+          </select>
+        </div>
+
+        <div class="api-hint">
+          <p>💡 <strong>提示：</strong></p>
+          <ul id="apiHintList">
+            <li>API Key 会安全存储在本地</li>
+            <li>推荐使用 OpenRouter，支持多种模型</li>
+            <li>获取 API Key：<a href="https://openrouter.ai/keys" target="_blank" id="apiKeyLink">OpenRouter 官网</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 预设配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">⚙️</span>
+          快速预设
+        </h2>
+        <p class="section-desc">选择预设配置，快速应用常见场景的设置。</p>
+
+        <div class="preset-grid">
+          <button class="preset-btn" data-preset="safe">
+            <span class="preset-icon">🛡️</span>
+            <span class="preset-name">保守安全</span>
+            <span class="preset-desc">推荐新手使用</span>
+          </button>
+          <button class="preset-btn" data-preset="balanced">
+            <span class="preset-icon">⚖️</span>
+            <span class="preset-name">均衡模式</span>
+            <span class="preset-desc">默认配置</span>
+          </button>
+          <button class="preset-btn" data-preset="fast">
+            <span class="preset-icon">⚡</span>
+            <span class="preset-name">快速采集</span>
+            <span class="preset-desc">有一定风险</span>
+          </button>
+          <button class="preset-btn" data-preset="unlimited">
+            <span class="preset-icon">♾️</span>
+            <span class="preset-name">无限图片</span>
+            <span class="preset-desc">获取所有图片</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 图片数量配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">🖼️</span>
+          图片数量限制
+        </h2>
+        <p class="section-desc">控制 AI 分析时获取的图片数量。设置为 0 表示无限制。</p>
+
+        <div class="setting-item">
+          <label for="imageDetail">
+            <span class="label-text">详情页图片数量</span>
+            <span class="label-hint">分析单个帖子时</span>
+          </label>
+          <input type="number" id="imageDetail" min="0" max="50" value="6">
+          <span class="unit">张</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="imageFeed">
+            <span class="label-text">信息流图片数量</span>
+            <span class="label-hint">分析推荐流时</span>
+          </label>
+          <input type="number" id="imageFeed" min="0" max="50" value="8">
+          <span class="unit">张</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="imageProfile">
+            <span class="label-text">博主主页图片数量</span>
+            <span class="label-hint">分析博主主页时</span>
+          </label>
+          <input type="number" id="imageProfile" min="0" max="50" value="8">
+          <span class="unit">张</span>
+        </div>
+      </section>
+
+      <!-- 频率控制配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">⚡</span>
+          频率控制
+        </h2>
+        <p class="section-desc">控制请求频率，避免触发风控。数值越小越安全，但采集速度越慢。</p>
+
+        <div class="setting-item">
+          <label for="rateMaxPerMinute">
+            <span class="label-text">每分钟最大请求数</span>
+            <span class="label-hint">建议 15-35</span>
+          </label>
+          <input type="number" id="rateMaxPerMinute" min="10" max="50" value="25">
+          <span class="unit">次</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="rateMaxPer5Min">
+            <span class="label-text">5分钟最大请求数</span>
+            <span class="label-hint">建议 50-120</span>
+          </label>
+          <input type="number" id="rateMaxPer5Min" min="30" max="200" value="80">
+          <span class="unit">次</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="rateMinInterval">
+            <span class="label-text">最小请求间隔</span>
+            <span class="label-hint">建议 2000-4000</span>
+          </label>
+          <input type="number" id="rateMinInterval" min="1000" max="10000" step="100" value="2500">
+          <span class="unit">毫秒</span>
+        </div>
+      </section>
+
+      <!-- 滚动行为配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">🎯</span>
+          滚动行为
+        </h2>
+        <p class="section-desc">控制自动滚动的行为，模拟真实用户。</p>
+
+        <div class="setting-item">
+          <label for="scrollUpChance">
+            <span class="label-text">向上滚动概率</span>
+            <span class="label-hint">0-100，建议 5-20</span>
+          </label>
+          <input type="number" id="scrollUpChance" min="0" max="100" value="10">
+          <span class="unit">%</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="scrollLongPauseChance">
+            <span class="label-text">长暂停概率</span>
+            <span class="label-hint">0-100，建议 10-30</span>
+          </label>
+          <input type="number" id="scrollLongPauseChance" min="0" max="100" value="15">
+          <span class="unit">%</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="scrollFatigue1">
+            <span class="label-text">第一疲劳阈值</span>
+            <span class="label-hint">滚动次数，建议 30-80</span>
+          </label>
+          <input type="number" id="scrollFatigue1" min="10" max="200" value="50">
+          <span class="unit">次</span>
+        </div>
+
+        <div class="setting-item">
+          <label for="scrollFatigue2">
+            <span class="label-text">第二疲劳阈值</span>
+            <span class="label-hint">滚动次数，建议 80-150</span>
+          </label>
+          <input type="number" id="scrollFatigue2" min="20" max="300" value="100">
+          <span class="unit">次</span>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

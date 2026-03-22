@@ -1,0 +1,395 @@
+/* Popup 样式 - Apple iOS 风格 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', sans-serif;
+  background: #F2F2F7;
+  color: #000;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.popup {
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+/* ===== 头部 ===== */
+.header {
+  background: linear-gradient(135deg, #FF2442 0%, #FF6B81 100%);
+  padding: 20px 18px 16px;
+  color: #fff;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn-settings {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-settings .settings-icon {
+  font-size: 16px;
+}
+
+.btn-settings .settings-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-settings:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.btn-settings:active {
+  transform: scale(0.95);
+}
+
+.logo {
+  font-size: 28px;
+}
+
+.header-title h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFD60A;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.active {
+  background: #34C759;
+}
+
+.status-dot.inactive {
+  background: #8E8E93;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== 统计面板 ===== */
+.stats-panel {
+  display: flex;
+  gap: 10px;
+  margin: -12px 14px 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.stat-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-num {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #FF2442;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: #8E8E93;
+  margin-top: 4px;
+}
+
+/* ===== 来源分布 ===== */
+.source-panel {
+  background: #fff;
+  margin: 0 14px 12px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 12px;
+}
+
+.source-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.source-name {
+  font-size: 12px;
+  color: #8E8E93;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.source-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: #F2F2F7;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.source-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #FF2442, #FF6B81);
+  transition: width 0.5s ease;
+}
+
+.source-count {
+  font-size: 12px;
+  color: #3C3C43;
+  font-weight: 600;
+  width: 36px;
+  text-align: right;
+}
+
+/* ===== 自动浏览 ===== */
+.auto-section {
+  background: #fff;
+  margin: 0 14px 12px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.auto-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-row label {
+  font-size: 13px;
+  color: #3C3C43;
+}
+
+.control-row select,
+.control-row input {
+  border: 1px solid #E5E5EA;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #F9F9F9;
+  color: #000;
+  outline: none;
+  width: 140px;
+}
+
+.control-row select:focus,
+.control-row input:focus {
+  border-color: #FF2442;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ===== 按钮 ===== */
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: #FF2442;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #E01E3A;
+}
+
+.btn-secondary {
+  background: #F2F2F7;
+  color: #3C3C43;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #E5E5EA;
+}
+
+.btn-text {
+  background: transparent;
+  color: #007AFF;
+  padding: 8px 12px;
+}
+
+.btn-text:hover {
+  background: #E5F2FF;
+}
+
+.btn-danger-text {
+  background: transparent;
+  color: #FF3B30;
+  padding: 8px 12px;
+}
+
+.btn-danger-text:hover {
+  background: #FFF0EF;
+}
+
+/* ===== 导出 ===== */
+.export-section {
+  background: #fff;
+  margin: 0 14px 12px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.export-btn {
+  border: 1px solid #E5E5EA;
+  border-radius: 12px;
+  padding: 12px 10px;
+  background: #FAFAFA;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.export-btn:hover {
+  border-color: #FF2442;
+  background: #FFF5F6;
+}
+
+.export-btn:active {
+  transform: scale(0.96);
+}
+
+.export-icon {
+  font-size: 22px;
+}
+
+.export-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #000;
+}
+
+.export-desc {
+  font-size: 11px;
+  color: #8E8E93;
+}
+
+/* ===== 底部 ===== */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px 14px;
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

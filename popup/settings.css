@@ -1,0 +1,359 @@
+/* 设置页面样式 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.settings-page {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid #e5e5e7;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+
+.btn-back, .btn-save {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  color: #007aff;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-back:hover, .btn-save:hover {
+  background: #f0f0f0;
+}
+
+.btn-save {
+  font-weight: 600;
+}
+
+/* 设置内容 */
+.settings-content {
+  padding: 20px;
+}
+
+.setting-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e5e7;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .icon {
+  font-size: 20px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #86868b;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* 设置项 */
+.setting-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f5f5f7;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.label-hint {
+  font-size: 12px;
+  color: #86868b;
+}
+
+.setting-item input[type="number"] {
+  width: 80px;
+  padding: 8px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.setting-item input[type="number"]:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.setting-item .unit {
+  font-size: 13px;
+  color: #86868b;
+  margin-left: 8px;
+  min-width: 40px;
+}
+
+/* 全宽设置项（用于 API 配置） */
+.setting-item-full {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  border-bottom: 1px solid #f5f5f7;
+  position: relative;
+}
+
+.setting-item-full:last-child {
+  border-bottom: none;
+}
+
+.setting-item-full label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.input-full {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.input-full:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.input-full::placeholder {
+  color: #c7c7cc;
+}
+
+.select-full {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.select-full:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.btn-toggle-password {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.btn-toggle-password:hover {
+  opacity: 1;
+}
+
+.btn-test-api {
+  padding: 8px 16px;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-test-api:hover {
+  background: #0051d5;
+}
+
+.btn-test-api:disabled {
+  background: #c7c7cc;
+  cursor: not-allowed;
+}
+
+#apiTestResult.success {
+  color: #34c759;
+}
+
+#apiTestResult.error {
+  color: #ff3b30;
+}
+
+.api-hint {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.api-hint p {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.api-hint ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.api-hint li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.api-hint a {
+  color: #007aff;
+  text-decoration: none;
+}
+
+.api-hint a:hover {
+  text-decoration: underline;
+}
+
+/* 预设配置 */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border: 2px solid #e5e5e7;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  border-color: #007aff;
+  background: #f0f7ff;
+}
+
+.preset-btn:active {
+  transform: scale(0.98);
+}
+
+.preset-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.preset-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 4px;
+}
+
+.preset-desc {
+  font-size: 12px;
+  color: #86868b;
+}
+
+/* Toast 提示 */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 脉冲动画 - 用于高亮测试按钮 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 149, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 149, 0, 0);
+  }
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<script>
+// 生成简单的扩展图标 (红色书本)
+function generateIcon(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // 红色圆形背景
+  ctx.fillStyle = '#FF2442';
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 白色书本图标
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${size * 0.5}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('📕', size/2, size/2);
+
+  return canvas.toDataURL('image/png');
+}
+
+[16, 48, 128].forEach(size => {
+  const link = document.createElement('a');
+  link.download = `icon${size}.png`;
+  link.href = generateIcon(size);
+  link.textContent = `Download icon${size}.png`;
+  document.body.appendChild(link);
+  document.body.appendChild(document.createElement('br'));
+});
+</script>
+</body>
+</html>

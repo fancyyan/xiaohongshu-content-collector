@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "小红书内容收集器 (公测版)",
+  "version": "1.0.0",
+  "description": "智能收集小红书笔记，支持AI多模态分析、自动分类标签、数据导出，内置防风控机制，本地存储保护隐私",
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://www.xiaohongshu.com/*",
+    "https://edith.xiaohongshu.com/*",
+    "https://openrouter.ai/*",
+    "https://*.xhscdn.com/*",
+    "https://ci.xiaohongshu.com/*",
+    "https://sns-img-qc.xhscdn.com/*",
+    "https://sns-webpic-qc.xhscdn.com/*",
+    "https://sns-img-hw.xhscdn.com/*",
+    "https://sns-img-bd.xhscdn.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.xiaohongshu.com/*"],
+      "js": ["injector.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.xiaohongshu.com/*"],
+      "js": ["bridge.js"],
+      "css": ["ai-panel.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
