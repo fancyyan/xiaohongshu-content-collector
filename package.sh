@@ -3,7 +3,7 @@
 # 小红书收集器打包脚本
 # 确保不会打包敏感信息
 
-VERSION="1.0.1"
+VERSION="1.0.2"
 PACKAGE_NAME="xhs-collector-beta-v${VERSION}.zip"
 
 echo "🚀 开始打包小红书收集器 v${VERSION}..."
