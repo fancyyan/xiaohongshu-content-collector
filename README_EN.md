@@ -54,8 +54,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.0.2.zip`
-   - Or direct download: [xhs-collector-beta-v1.0.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.2/xhs-collector-beta-v1.0.2.zip)
+   - Download the latest version `xhs-collector-beta-v1.0.3.zip`
+   - Or direct download: [xhs-collector-beta-v1.0.3.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.3/xhs-collector-beta-v1.0.3.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder

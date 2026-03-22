@@ -54,8 +54,8 @@
 
 1. **下载安装包**
    - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.0.2.zip`
-   - 或直接下载：[xhs-collector-beta-v1.0.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.2/xhs-collector-beta-v1.0.2.zip)
+   - 下载最新版本的 `xhs-collector-beta-v1.0.3.zip`
+   - 或直接下载：[xhs-collector-beta-v1.0.3.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.3/xhs-collector-beta-v1.0.3.zip)
 
 2. **解压文件**
    - 将下载的 zip 文件解压到本地文件夹
