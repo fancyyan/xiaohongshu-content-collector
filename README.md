@@ -303,7 +303,7 @@ xhs-collector/
 欢迎贡献代码、报告问题或提出建议！
 
 ### 报告问题
-- 前往 [Issues](https://github.com/your-username/xhs-collector/issues) 页面
+- 前往 [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) 页面
 - 描述问题和复现步骤
 - 附上截图或错误信息
 
@@ -331,8 +331,9 @@ xhs-collector/
 
 ## 📮 联系方式
 
-- 问题反馈：[GitHub Issues](https://github.com/your-username/xhs-collector/issues)
-- 功能建议：[GitHub Discussions](https://github.com/your-username/xhs-collector/discussions)
+- 问题反馈：[GitHub Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues)
+- 功能建议：[GitHub Discussions](https://github.com/fancyyan/xiaohongshu-content-collector/discussions)
+- 邮箱：fancyyan@icloud.com
 
 ---
 
@@ -340,6 +341,6 @@ xhs-collector/
 
 **⭐ 如果这个项目对你有帮助，请给个 Star！**
 
-Made with ❤️ by [Your Name]
+Made with ❤️ by [Fancy Yan](https://github.com/fancyyan)
 
 </div>
