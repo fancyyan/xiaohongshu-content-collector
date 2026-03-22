@@ -48,31 +48,37 @@
 
 ## 🚀 安装指南
 
-### 方法 1：从源码安装（推荐）
+### 方法 1：从 Release 安装（推荐）
 
-1. **下载项目**
-   ```bash
-   git clone https://github.com/your-username/xhs-collector.git
-   cd xhs-collector
-   ```
+1. **下载安装包**
+   - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
+   - 下载最新版本的 `xhs-collector-beta-v1.0.1.zip`
+   - 或直接下载：[xhs-collector-beta-v1.0.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.1/xhs-collector-beta-v1.0.1.zip)
 
-2. **加载到 Chrome**
+2. **解压文件**
+   - 将下载的 zip 文件解压到本地文件夹
+
+3. **加载到 Chrome**
    - 打开 Chrome 浏览器
    - 访问 `chrome://extensions/`
    - 开启右上角的"开发者模式"
    - 点击"加载已解压的扩展程序"
-   - 选择项目文件夹
+   - 选择解压后的文件夹
 
-3. **验证安装**
-   - 在扩展列表中看到"小红书内容收集器"
+4. **验证安装**
+   - 在扩展列表中看到"小红书内容收集器 (公测版)"
    - 图标显示在浏览器工具栏
 
-### 方法 2：从 Release 安装
+### 方法 2：从源码安装
 
-1. 前往 [Releases](https://github.com/your-username/xhs-collector/releases) 页面
-2. 下载最新版本的 `xhs-collector-v1.0.0.zip`
-3. 解压到本地文件夹
-4. 按照方法 1 的步骤 2-3 加载到 Chrome
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/fancyyan/xiaohongshu-content-collector.git
+   cd xiaohongshu-content-collector
+   ```
+
+2. **加载到 Chrome**
+   - 按照方法 1 的步骤 3-4 加载到 Chrome
 
 ---
 
