@@ -109,6 +109,7 @@ const API_PROVIDERS = {
       '使用自定义 API 端点',
       '需要兼容 OpenAI 格式的 API',
       '请确保 API 端点支持多模态（图片+文字）',
+      '模型名称应在 API 端点 URL 中指定，或在请求体中固定',
     ],
     models: [
       { value: 'custom-model', label: '自定义模型（在端点中指定）' },
@@ -169,10 +170,16 @@ function updateProviderUI() {
 
   // 更新自定义端点显示
   const customEndpointContainer = document.getElementById('customEndpointContainer');
+  const apiModelContainer = document.getElementById('apiModelContainer');
+
   if (provider === 'custom') {
     customEndpointContainer.style.display = 'flex';
+    // 自定义供应商时隐藏模型选择（模型在端点中指定）
+    apiModelContainer.style.display = 'none';
   } else {
     customEndpointContainer.style.display = 'none';
+    // 非自定义供应商时显示模型选择
+    apiModelContainer.style.display = 'flex';
   }
 
   // 更新模型列表

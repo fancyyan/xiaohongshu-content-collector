@@ -56,12 +56,12 @@
         <div class="setting-item-full" id="customEndpointContainer" style="display: none;">
           <label for="customEndpoint">
             <span class="label-text">自定义 API 端点</span>
-            <span class="label-hint">完整的 API URL</span>
+            <span class="label-hint">完整的 API URL（模型名称在端点中指定）</span>
           </label>
           <input type="text" id="customEndpoint" placeholder="https://api.example.com/v1/chat/completions" class="input-full">
         </div>
 
-        <div class="setting-item-full">
+        <div class="setting-item-full" id="apiModelContainer">
           <label for="apiModel">
             <span class="label-text">AI 模型</span>
             <span class="label-hint">选择使用的 AI 模型</span>
