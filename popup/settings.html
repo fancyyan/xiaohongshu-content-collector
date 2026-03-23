@@ -28,10 +28,12 @@
 
         <div class="setting-item-full">
           <label for="apiProvider">
+            <span class="step-badge">步骤 1</span>
             <span class="label-text">API 供应商</span>
             <span class="label-hint">选择 API 服务提供商</span>
           </label>
           <select id="apiProvider" class="select-full">
+            <option value="">请选择 API 供应商</option>
             <optgroup label="推荐（海外）">
               <option value="openrouter">OpenRouter（推荐，支持多模型）</option>
               <option value="anthropic">Anthropic（Claude 官方）</option>
@@ -51,13 +53,14 @@
 
         <div class="setting-item-full">
           <label for="apiKey">
+            <span class="step-badge">步骤 2</span>
             <span class="label-text">API Key</span>
             <span class="label-hint" id="apiKeyHint">用于 AI 多模态分析</span>
           </label>
           <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="password" id="apiKey" placeholder="sk-..." class="input-full" style="flex: 1;">
-            <button class="btn-toggle-password" id="btnTogglePassword" type="button">👁️</button>
-            <button class="btn-test-api" id="btnTestAPI" type="button">测试连接</button>
+            <input type="password" id="apiKey" placeholder="请先选择 API 供应商" class="input-full" style="flex: 1;" disabled>
+            <button class="btn-toggle-password" id="btnTogglePassword" type="button" disabled>👁️</button>
+            <button class="btn-test-api" id="btnTestAPI" type="button" disabled>测试连接</button>
           </div>
           <div id="apiTestResult" style="margin-top: 8px; font-size: 13px; display: none;"></div>
         </div>
@@ -72,20 +75,22 @@
 
         <div class="setting-item-full" id="apiModelContainer">
           <label for="apiModel">
+            <span class="step-badge">步骤 3</span>
             <span class="label-text">AI 模型</span>
             <span class="label-hint" id="apiModelHint">选择使用的 AI 模型</span>
           </label>
-          <select id="apiModel" class="select-full">
+          <select id="apiModel" class="select-full" disabled>
             <!-- 模型选项会根据供应商动态更新 -->
           </select>
         </div>
 
         <div class="setting-item-full" id="customModelContainer" style="display: none;">
           <label for="customModel">
+            <span class="step-badge">步骤 3</span>
             <span class="label-text">模型 ID</span>
             <span class="label-hint">输入模型标识符，如：Pro/zai-org/GLM-4.7</span>
           </label>
-          <input type="text" id="customModel" placeholder="Pro/zai-org/GLM-4.7" class="input-full">
+          <input type="text" id="customModel" placeholder="请先填写 API Key" class="input-full" disabled>
         </div>
 
         <div class="api-hint">

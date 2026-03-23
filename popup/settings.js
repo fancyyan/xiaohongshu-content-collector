@@ -207,11 +207,60 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   bindEvents();
   updateProviderUI(); // 初始化供应商 UI
+  updateFormSteps(); // 初始化表单步骤状态
 });
+
+// 更新表单步骤状态
+function updateFormSteps() {
+  const provider = document.getElementById('apiProvider').value;
+  const apiKey = document.getElementById('apiKey').value.trim();
+
+  const apiKeyInput = document.getElementById('apiKey');
+  const btnTogglePassword = document.getElementById('btnTogglePassword');
+  const btnTestAPI = document.getElementById('btnTestAPI');
+  const apiModelSelect = document.getElementById('apiModel');
+  const customModelInput = document.getElementById('customModel');
+  const customEndpointInput = document.getElementById('customEndpoint');
+
+  // 步骤2：API Key - 只有选择了提供方才能填写
+  if (provider && provider !== '') {
+    apiKeyInput.disabled = false;
+    btnTogglePassword.disabled = false;
+    btnTestAPI.disabled = false;
+    apiKeyInput.placeholder = API_PROVIDERS[provider].keyPlaceholder;
+  } else {
+    apiKeyInput.disabled = true;
+    btnTogglePassword.disabled = true;
+    btnTestAPI.disabled = true;
+    apiKeyInput.placeholder = '请先选择 API 供应商';
+  }
+
+  // 步骤3：模型选择 - 只有填写了API Key才能选择
+  if (provider && provider !== '' && apiKey) {
+    apiModelSelect.disabled = false;
+    customModelInput.disabled = false;
+    if (provider === 'custom') {
+      customEndpointInput.disabled = false;
+    }
+  } else {
+    apiModelSelect.disabled = true;
+    customModelInput.disabled = true;
+    customEndpointInput.disabled = true;
+    if (!apiKey) {
+      customModelInput.placeholder = '请先填写 API Key';
+    }
+  }
+}
 
 // 更新供应商相关的 UI
 function updateProviderUI() {
   const provider = document.getElementById('apiProvider').value;
+
+  // 如果没有选择提供方，不更新UI
+  if (!provider || provider === '') {
+    return;
+  }
+
   const providerConfig = API_PROVIDERS[provider];
 
   // 更新 API Key 提示
@@ -246,6 +295,9 @@ function updateProviderUI() {
   // 更新提示信息
   const hintList = document.getElementById('apiHintList');
   hintList.innerHTML = providerConfig.hint.map(h => `<li>${h}</li>`).join('');
+
+  // 更新表单步骤状态
+  updateFormSteps();
 }
 
 // 加载设置
@@ -574,12 +626,26 @@ function bindEvents() {
   document.getElementById('apiProvider').addEventListener('change', () => {
     updateProviderUI();
     resetAPITestStatus();
+    // 如果选择了提供方，自动聚焦到API Key输入框
+    const provider = document.getElementById('apiProvider').value;
+    if (provider && provider !== '') {
+      setTimeout(() => {
+        document.getElementById('apiKey').focus();
+      }, 100);
+    }
   });
 
-  // 监听API配置改变，重置测试状态
-  document.getElementById('apiKey').addEventListener('input', resetAPITestStatus);
+  // 监听API配置改变，重置测试状态并更新表单步骤
+  document.getElementById('apiKey').addEventListener('input', () => {
+    resetAPITestStatus();
+    updateFormSteps();
+  });
+  document.getElementById('apiKey').addEventListener('blur', updateFormSteps);
   document.getElementById('apiModel').addEventListener('change', resetAPITestStatus);
-  document.getElementById('customEndpoint').addEventListener('input', resetAPITestStatus);
+  document.getElementById('customEndpoint').addEventListener('input', () => {
+    resetAPITestStatus();
+    updateFormSteps();
+  });
 
   // 密码显示/隐藏
   document.getElementById('btnTogglePassword').addEventListener('click', () => {
