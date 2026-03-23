@@ -421,8 +421,8 @@ async function saveSettings() {
       }
     }
 
-    // 检查是否已经测试过API连接
-    const currentConfig = {
+    // 检查API配置是否改变
+    const currentAPIConfig = {
       provider,
       apiKey,
       apiModel,
@@ -430,16 +430,17 @@ async function saveSettings() {
       customModel
     };
 
-    // 判断配置是否改变
-    const configChanged = !apiTestStatus.lastTestedConfig ||
-      apiTestStatus.lastTestedConfig.provider !== currentConfig.provider ||
-      apiTestStatus.lastTestedConfig.apiKey !== currentConfig.apiKey ||
-      apiTestStatus.lastTestedConfig.apiModel !== currentConfig.apiModel ||
-      apiTestStatus.lastTestedConfig.customEndpoint !== currentConfig.customEndpoint ||
-      apiTestStatus.lastTestedConfig.customModel !== currentConfig.customModel;
+    // 判断API配置是否改变
+    const apiConfigChanged = !apiTestStatus.lastTestedConfig ||
+      apiTestStatus.lastTestedConfig.provider !== currentAPIConfig.provider ||
+      apiTestStatus.lastTestedConfig.apiKey !== currentAPIConfig.apiKey ||
+      apiTestStatus.lastTestedConfig.apiModel !== currentAPIConfig.apiModel ||
+      apiTestStatus.lastTestedConfig.customEndpoint !== currentAPIConfig.customEndpoint ||
+      apiTestStatus.lastTestedConfig.customModel !== currentAPIConfig.customModel;
 
-    // 如果配置改变了，或者从未测试过，或者上次测试失败，则要求先测试
-    if (configChanged || !apiTestStatus.tested || !apiTestStatus.success) {
+    // 只有在API配置改变时才要求测试
+    // 如果只是修改其他配置（图片数量、频率控制、滚动行为），不需要重新测试API
+    if (apiConfigChanged && (!apiTestStatus.tested || !apiTestStatus.success)) {
       showToast('请先测试API连接，确保配置正确后再保存');
       document.getElementById('btnTestAPI').focus();
 
