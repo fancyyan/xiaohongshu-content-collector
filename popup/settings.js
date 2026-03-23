@@ -328,6 +328,19 @@ async function loadSettings() {
       document.getElementById('apiModel').value = config.apiConfig.apiModel || 'google/gemini-2.0-flash-001';
       document.getElementById('customEndpoint').value = config.apiConfig.customEndpoint || '';
       document.getElementById('customModel').value = config.apiConfig.customModel || '';
+
+      // 如果已有API配置，标记为已测试成功（假设之前保存时已经测试过）
+      if (config.apiConfig.apiKey) {
+        apiTestStatus.tested = true;
+        apiTestStatus.success = true;
+        apiTestStatus.lastTestedConfig = {
+          provider: config.apiConfig.provider || 'openrouter',
+          apiKey: config.apiConfig.apiKey,
+          apiModel: config.apiConfig.apiModel || 'google/gemini-2.0-flash-001',
+          customEndpoint: config.apiConfig.customEndpoint || '',
+          customModel: config.apiConfig.customModel || ''
+        };
+      }
     }
   } catch (error) {
     console.error('加载设置失败:', error);
@@ -430,17 +443,24 @@ async function saveSettings() {
       customModel
     };
 
-    // 判断API配置是否改变
-    const apiConfigChanged = !apiTestStatus.lastTestedConfig ||
-      apiTestStatus.lastTestedConfig.provider !== currentAPIConfig.provider ||
-      apiTestStatus.lastTestedConfig.apiKey !== currentAPIConfig.apiKey ||
-      apiTestStatus.lastTestedConfig.apiModel !== currentAPIConfig.apiModel ||
-      apiTestStatus.lastTestedConfig.customEndpoint !== currentAPIConfig.customEndpoint ||
-      apiTestStatus.lastTestedConfig.customModel !== currentAPIConfig.customModel;
+    // 判断API配置是否改变（只有在已经测试过的情况下才比较）
+    let apiConfigChanged = false;
+    if (apiTestStatus.lastTestedConfig) {
+      apiConfigChanged =
+        apiTestStatus.lastTestedConfig.provider !== currentAPIConfig.provider ||
+        apiTestStatus.lastTestedConfig.apiKey !== currentAPIConfig.apiKey ||
+        apiTestStatus.lastTestedConfig.apiModel !== currentAPIConfig.apiModel ||
+        apiTestStatus.lastTestedConfig.customEndpoint !== currentAPIConfig.customEndpoint ||
+        apiTestStatus.lastTestedConfig.customModel !== currentAPIConfig.customModel;
+    }
 
-    // 只有在API配置改变时才要求测试
-    // 如果只是修改其他配置（图片数量、频率控制、滚动行为），不需要重新测试API
-    if (apiConfigChanged && (!apiTestStatus.tested || !apiTestStatus.success)) {
+    // 只有在以下情况才要求测试API：
+    // 1. 从未测试过API
+    // 2. 上次测试失败
+    // 3. API配置改变了
+    const needAPITest = !apiTestStatus.tested || !apiTestStatus.success || apiConfigChanged;
+
+    if (needAPITest) {
       showToast('请先测试API连接，确保配置正确后再保存');
       document.getElementById('btnTestAPI').focus();
 
