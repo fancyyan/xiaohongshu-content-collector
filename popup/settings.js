@@ -233,6 +233,61 @@ async function loadSettings() {
   }
 }
 
+/**
+ * 验证配置值的范围
+ * @param {Object} config - 配置对象
+ * @returns {string[]} - 错误消息数组
+ */
+function validateConfig(config) {
+  const errors = [];
+
+  // 验证图片数量限制
+  if (config.imageLimit.detail < 0 || config.imageLimit.detail > 50) {
+    errors.push('详情页图片数量应在 0-50 之间');
+  }
+  if (config.imageLimit.feed < 0 || config.imageLimit.feed > 50) {
+    errors.push('信息流图片数量应在 0-50 之间');
+  }
+  if (config.imageLimit.profile < 0 || config.imageLimit.profile > 50) {
+    errors.push('博主主页图片数量应在 0-50 之间');
+  }
+
+  // 验证频率限制
+  if (config.rateLimit.maxPerMinute < 5 || config.rateLimit.maxPerMinute > 60) {
+    errors.push('每分钟请求数应在 5-60 之间');
+  }
+  if (config.rateLimit.maxPer5Min < 20 || config.rateLimit.maxPer5Min > 300) {
+    errors.push('5分钟请求数应在 20-300 之间');
+  }
+  if (config.rateLimit.minInterval < 1000 || config.rateLimit.minInterval > 10000) {
+    errors.push('最小请求间隔应在 1000-10000 毫秒之间');
+  }
+
+  // 验证滚动行为
+  if (config.scrollBehavior.upScrollChance < 0 || config.scrollBehavior.upScrollChance > 1) {
+    errors.push('向上滚动概率应在 0-1 之间');
+  }
+  if (config.scrollBehavior.longPauseChance < 0 || config.scrollBehavior.longPauseChance > 1) {
+    errors.push('长暂停概率应在 0-1 之间');
+  }
+  if (config.scrollBehavior.fatigueThreshold1 < 10 || config.scrollBehavior.fatigueThreshold1 > 200) {
+    errors.push('疲劳阈值1应在 10-200 之间');
+  }
+  if (config.scrollBehavior.fatigueThreshold2 < 20 || config.scrollBehavior.fatigueThreshold2 > 300) {
+    errors.push('疲劳阈值2应在 20-300 之间');
+  }
+
+  // 验证逻辑关系
+  if (config.rateLimit.maxPerMinute * 5 > config.rateLimit.maxPer5Min) {
+    errors.push('5分钟请求数应大于等于每分钟请求数的5倍');
+  }
+  if (config.scrollBehavior.fatigueThreshold2 <= config.scrollBehavior.fatigueThreshold1) {
+    errors.push('疲劳阈值2应大于疲劳阈值1');
+  }
+
+  return errors;
+}
+
 // 保存设置
 async function saveSettings() {
   try {
@@ -322,6 +377,15 @@ async function saveSettings() {
         endpoint: provider === 'custom' ? document.getElementById('customEndpoint').value.trim() : providerConfig.endpoint,
       }
     };
+
+    // 验证配置范围
+    const validationErrors = validateConfig(config);
+    if (validationErrors.length > 0) {
+      const errorMessage = '配置验证失败：\n' + validationErrors.join('\n');
+      alert(errorMessage);
+      showToast('配置验证失败，请检查输入');
+      return;
+    }
 
     // 保存到 chrome.storage
     await chrome.storage.sync.set({ userConfig: config });

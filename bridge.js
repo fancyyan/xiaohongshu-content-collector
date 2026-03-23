@@ -390,33 +390,178 @@
     return newCount;
   }
 
+  /**
+   * 多选择器查询辅助函数
+   * @param {string[]} selectors - 选择器数组
+   * @returns {string} - 找到的文本内容
+   */
+  function queryWithFallback(selectors) {
+    for (const selector of selectors) {
+      try {
+        const element = document.querySelector(selector);
+        const text = element?.textContent?.trim();
+        if (text) return text;
+      } catch (e) {
+        continue;
+      }
+    }
+    return '';
+  }
+
   function extractDetailDOM(noteId) {
     try {
-      const title = document.querySelector('#detail-title, .title')?.textContent?.trim();
-      const desc = document.querySelector('#detail-desc, .note-text, .desc')?.textContent?.trim();
-      const author = document.querySelector('.author-wrapper .username, .user-name')?.textContent?.trim();
-      const tags = Array.from(document.querySelectorAll('a[href*="search_result"]'))
-        .map(el => el.textContent?.trim()?.replace(/^#/, '')).filter(Boolean);
+      // 标题选择器（多个备选）
+      const titleSelectors = [
+        '#detail-title',
+        '.title',
+        '.note-title',
+        '[class*="title"]',
+        'h1',
+        '[data-title]'
+      ];
+      const title = queryWithFallback(titleSelectors);
+
+      // 内容选择器（多个备选）
+      const descSelectors = [
+        '#detail-desc',
+        '.note-text',
+        '.desc',
+        '.note-content',
+        '[class*="content"]',
+        '[class*="desc"]',
+        '.note-scroller'
+      ];
+      const desc = queryWithFallback(descSelectors);
+
+      // 作者选择器（多个备选）
+      const authorSelectors = [
+        '.author-wrapper .username',
+        '.user-name',
+        '.name',
+        '[class*="author"]',
+        '[class*="user-name"]'
+      ];
+      const author = queryWithFallback(authorSelectors);
+
       if (!title && !desc) return null;
-      // 也提取 DOM 中的图片
-      const images = Array.from(document.querySelectorAll('.note-image-slider img, .media-container img'))
-        .map(img => img.src || img.dataset?.src).filter(Boolean);
-      return { noteId, title: title || '', content: desc || '', authorName: author || '', tags, images, source: 'dom_detail' };
-    } catch { return null; }
+
+      // 标签提取（多种方式）
+      const tags = Array.from(document.querySelectorAll('a[href*="search_result"], .tag, [class*="tag"]'))
+        .map(el => el.textContent?.trim()?.replace(/^#/, '')).filter(Boolean);
+
+      // 图片提取（多个备选）
+      const imageSelectors = [
+        '.note-image-slider img',
+        '.media-container img',
+        '.note-detail img',
+        '[class*="image"] img',
+        '[class*="photo"] img'
+      ];
+      const images = [];
+      imageSelectors.forEach(selector => {
+        try {
+          document.querySelectorAll(selector).forEach(img => {
+            const src = img.src || img.dataset?.src || img.dataset?.original;
+            if (src) images.push(src);
+          });
+        } catch (e) {}
+      });
+
+      return {
+        noteId,
+        title: title || '',
+        content: desc || '',
+        authorName: author || '',
+        tags: [...new Set(tags)],
+        images: [...new Set(images)].filter(Boolean),
+        source: 'dom_detail'
+      };
+    } catch (e) {
+      console.warn('[XHS Collector] extractDetailDOM error:', e);
+      return null;
+    }
   }
 
   function extractCardDOM(card) {
     try {
-      const link = card.querySelector('a[href*="/explore/"]');
-      const noteId = link?.getAttribute('href')?.split('/explore/')?.[1]?.split('?')?.[0];
+      // 链接提取（多个备选）
+      const linkSelectors = [
+        'a[href*="/explore/"]',
+        'a[href*="/note/"]',
+        '[class*="link"]',
+        'a'
+      ];
+      let noteId = null;
+      for (const selector of linkSelectors) {
+        const link = card.querySelector(selector);
+        if (link) {
+          const href = link.getAttribute('href') || '';
+          noteId = href.split('/explore/')?.[1]?.split('?')?.[0] ||
+                   href.split('/note/')?.[1]?.split('?')?.[0];
+          if (noteId && noteId.length > 8) break;
+        }
+      }
       if (!noteId) return null;
-      const coverUrl = card.querySelector('img')?.src || '';
+
+      // 标题提取（多个备选）
+      const titleSelectors = [
+        '.title',
+        'span',
+        '[class*="title"]',
+        'h3',
+        'h4'
+      ];
+      let title = '';
+      for (const selector of titleSelectors) {
+        const el = card.querySelector(selector);
+        if (el?.textContent?.trim()) {
+          title = el.textContent.trim();
+          break;
+        }
+      }
+
+      // 作者提取（多个备选）
+      const authorSelectors = [
+        '.author-wrapper .name',
+        '.author-name',
+        '[class*="author"]',
+        '[class*="user"]'
+      ];
+      let authorName = '';
+      for (const selector of authorSelectors) {
+        const el = card.querySelector(selector);
+        if (el?.textContent?.trim()) {
+          authorName = el.textContent.trim();
+          break;
+        }
+      }
+
+      // 封面图提取（多个备选）
+      const imgSelectors = [
+        'img',
+        '[class*="cover"] img',
+        '[class*="image"] img'
+      ];
+      let coverUrl = '';
+      for (const selector of imgSelectors) {
+        const img = card.querySelector(selector);
+        if (img) {
+          coverUrl = img.src || img.dataset?.src || img.dataset?.original || '';
+          if (coverUrl) break;
+        }
+      }
+
       return {
-        noteId, title: card.querySelector('.title, span')?.textContent?.trim() || '',
-        authorName: card.querySelector('.author-wrapper .name')?.textContent?.trim() || '',
-        coverUrl, source: 'dom_feed',
+        noteId,
+        title,
+        authorName,
+        coverUrl,
+        source: 'dom_feed',
       };
-    } catch { return null; }
+    } catch (e) {
+      console.warn('[XHS Collector] extractCardDOM error:', e);
+      return null;
+    }
   }
 
   function sendPosts(posts) { safeSendMessage({ type: 'SAVE_POSTS', posts, url: 'dom' }); }

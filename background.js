@@ -2,6 +2,52 @@
  * 小红书内容收集器 - Background Service Worker
  */
 
+// ========== 错误处理工具 ==========
+
+/**
+ * 清理错误消息，避免泄露敏感信息
+ * @param {Error} error - 原始错误对象
+ * @returns {string} - 安全的错误消息
+ */
+function sanitizeError(error) {
+  if (!error) return '未知错误';
+
+  let message = error.message || String(error);
+
+  // 移除可能包含敏感信息的内容
+  const sensitivePatterns = [
+    /key[=:\s]+[^\s]+/gi,
+    /token[=:\s]+[^\s]+/gi,
+    /secret[=:\s]+[^\s]+/gi,
+    /password[=:\s]+[^\s]+/gi,
+    /authorization[=:\s]+[^\s]+/gi,
+    /bearer\s+[^\s]+/gi,
+    /sk-[a-zA-Z0-9-]+/gi,  // API keys
+  ];
+
+  sensitivePatterns.forEach(pattern => {
+    message = message.replace(pattern, '[已隐藏]');
+  });
+
+  // 限制错误消息长度
+  if (message.length > 200) {
+    message = message.substring(0, 200) + '...';
+  }
+
+  return message;
+}
+
+/**
+ * 安全的错误响应包装器
+ * @param {Error} error - 错误对象
+ * @returns {Object} - 安全的错误响应
+ */
+function createErrorResponse(error) {
+  const safeMessage = sanitizeError(error);
+  console.error('[XHS Collector] Error:', error);
+  return { error: safeMessage };
+}
+
 // ========== IndexedDB 存储（内联） ==========
 
 const DB_NAME = 'xhs_collector';
@@ -65,13 +111,55 @@ class StorageManager {
   }
 
   async savePosts(posts) {
-    let saved = 0, updated = 0;
-    for (const post of posts) {
-      const existed = await this.hasPost(post.noteId);
-      await this.savePost(post);
-      if (existed) updated++; else saved++;
-    }
-    return { saved, updated };
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readwrite');
+      const store = tx.objectStore(STORE_POSTS);
+
+      let saved = 0, updated = 0;
+      let completed = 0;
+      const total = posts.length;
+
+      posts.forEach(post => {
+        const getReq = store.get(post.noteId);
+        getReq.onsuccess = () => {
+          const existing = getReq.result;
+          let record;
+
+          if (existing) {
+            updated++;
+            record = {
+              ...existing,
+              ...post,
+              capturedAt: existing.capturedAt,
+              updatedAt: Date.now(),
+              captureCount: (existing.captureCount || 1) + 1,
+              title: post.title || existing.title,
+              content: post.content || existing.content,
+              images: (post.images && post.images.length > 0) ? post.images : existing.images,
+              videoUrl: post.videoUrl || existing.videoUrl,
+            };
+          } else {
+            saved++;
+            record = {
+              ...post,
+              capturedAt: Date.now(),
+              updatedAt: Date.now(),
+              captureCount: 1
+            };
+          }
+
+          store.put(record);
+          completed++;
+        };
+        getReq.onerror = () => {
+          completed++;
+        };
+      });
+
+      tx.oncomplete = () => resolve({ saved, updated });
+      tx.onerror = (e) => reject(e.target.error);
+    });
   }
 
   async hasPost(noteId) {
@@ -200,19 +288,19 @@ const storage = new StorageManager();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'SAVE_POSTS') {
-    handleSavePosts(msg.posts).then(r => sendResponse(r)).catch(e => sendResponse({ error: e.message }));
+    handleSavePosts(msg.posts).then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
     return true;
   }
   if (msg.type === 'GET_STATS') {
-    storage.getStats().then(s => sendResponse(s)).catch(e => sendResponse({ error: e.message }));
+    storage.getStats().then(s => sendResponse(s)).catch(e => sendResponse(createErrorResponse(e)));
     return true;
   }
   if (msg.type === 'EXPORT_DATA') {
-    handleExport(msg.format).then(r => sendResponse(r)).catch(e => sendResponse({ error: e.message }));
+    handleExport(msg.format).then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
     return true;
   }
   if (msg.type === 'CLEAR_DATA') {
-    storage.clearAll().then(() => { updateBadge(0); sendResponse({ ok: true }); }).catch(e => sendResponse({ error: e.message }));
+    storage.clearAll().then(() => { updateBadge(0); sendResponse({ ok: true }); }).catch(e => sendResponse(createErrorResponse(e)));
     return true;
   }
   if (msg.type === 'AUTO_SCROLL_STOPPED') {
@@ -225,14 +313,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'FETCH_IMAGE') {
     fetchImageAsBase64(msg.url)
       .then(b64 => sendResponse({ ok: true, data: b64 }))
-      .catch(e => sendResponse({ ok: false, error: e.message }));
+      .catch(e => sendResponse({ ok: false, error: sanitizeError(e) }));
     return true;
   }
   // 批量获取图片
   if (msg.type === 'FETCH_IMAGES') {
     fetchImagesAsBase64(msg.urls)
       .then(results => sendResponse({ ok: true, data: results }))
-      .catch(e => sendResponse({ ok: false, error: e.message }));
+      .catch(e => sendResponse({ ok: false, error: sanitizeError(e) }));
     return true;
   }
   // 导出分析结果
@@ -240,7 +328,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const dataUrl = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(msg.content);
     chrome.downloads.download({ url: dataUrl, filename: msg.filename, saveAs: true })
       .then(id => sendResponse({ ok: true, downloadId: id }))
-      .catch(e => sendResponse({ ok: false, error: e.message }));
+      .catch(e => sendResponse({ ok: false, error: sanitizeError(e) }));
     return true;
   }
 });
