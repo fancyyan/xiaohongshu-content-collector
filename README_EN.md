@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -25,7 +25,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **Deduplication Storage** - Automatic deduplication to avoid duplicate collection
 
 ### 🤖 AI Multimodal Analysis
-- **Multiple Provider Support** - OpenRouter, Anthropic, OpenAI, Google AI, and custom endpoints
+- **Multiple Provider Support** - OpenRouter, Anthropic, OpenAI, Google AI, Qwen (Tongyi Qianwen), DeepSeek, MiniMax, and custom endpoints
+- **China-based API Support** - Added Qwen, DeepSeek, MiniMax for users in China
 - **Text & Image Analysis** - Analyzes both text content and visual style simultaneously
 - **Multiple Analysis Modes** - Content analysis, copywriting, viral potential, tag suggestions, visual diagnostics, etc.
 - **Real-time Analysis** - Direct AI analysis in the browser
@@ -43,8 +44,12 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 ### ⚙️ Visual Configuration
 - **Settings Interface** - Complete visual settings page
+- **Step-by-step Guide** - Clear step indicators to guide users through configuration
+- **API Categories** - Recommended (International), China-based, Custom
 - **Quick Presets** - Conservative, balanced, fast collection, unlimited images
+- **Smart Validation** - Only requires API testing when API config changes
 - **Real-time Effect** - Configuration changes take effect immediately
+- **Help & Support** - Built-in tutorials, issue reporting, GitHub links
 
 ---
 
@@ -54,8 +59,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.0.3.zip`
-   - Or direct download: [xhs-collector-beta-v1.0.3.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.3/xhs-collector-beta-v1.0.3.zip)
+   - Download the latest version `xhs-collector-beta-v1.0.4.zip`
+   - Or direct download: [xhs-collector-beta-v1.0.4.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.4/xhs-collector-beta-v1.0.4.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder
@@ -95,8 +100,13 @@ If you want to use AI analysis features, you need to configure an API:
    - Click the **⚙️ Settings** button in the top right
 
 2. **Select API Provider**
-   - Recommended: **OpenRouter** (supports multiple models, cost-effective)
-   - Get API Key: https://openrouter.ai/keys
+   - **Recommended (International)**: OpenRouter (multiple models), Anthropic, OpenAI, Google AI
+   - **China-based**: Qwen Tongyi Qianwen (multimodal), DeepSeek (text only), MiniMax (text only)
+   - **Custom**: Custom API endpoint
+   - Recommended: **OpenRouter** (multiple models, cost-effective) or **Qwen** (fast access in China)
+   - Get API Key:
+     - OpenRouter: https://openrouter.ai/keys
+     - Qwen: https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen
 
 3. **Configure API**
    - Enter API Key
