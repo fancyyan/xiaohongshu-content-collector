@@ -32,11 +32,19 @@
             <span class="label-hint">选择 API 服务提供商</span>
           </label>
           <select id="apiProvider" class="select-full">
-            <option value="openrouter">OpenRouter（推荐，支持多模型）</option>
-            <option value="anthropic">Anthropic（Claude 官方）</option>
-            <option value="openai">OpenAI（GPT 官方）</option>
-            <option value="google">Google AI（Gemini 官方）</option>
-            <option value="custom">自定义 API 端点</option>
+            <optgroup label="推荐（海外）">
+              <option value="openrouter">OpenRouter（推荐，支持多模型）</option>
+              <option value="anthropic">Anthropic（Claude 官方）</option>
+              <option value="openai">OpenAI（GPT 官方）</option>
+              <option value="google">Google AI（Gemini 官方）</option>
+            </optgroup>
+            <optgroup label="国内">
+              <option value="deepseek">DeepSeek（仅文本）</option>
+              <option value="minimax">MiniMax（仅文本）</option>
+            </optgroup>
+            <optgroup label="自定义">
+              <option value="custom">自定义 API 端点</option>
+            </optgroup>
           </select>
         </div>
 

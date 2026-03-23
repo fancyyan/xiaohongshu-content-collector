@@ -100,6 +100,38 @@ const API_PROVIDERS = {
       { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash（便宜）' },
     ]
   },
+  deepseek: {
+    name: 'DeepSeek',
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    keyPlaceholder: 'sk-...',
+    keyLink: 'https://platform.deepseek.com/api_keys',
+    hint: [
+      'DeepSeek 官方 API（国内）',
+      '⚠️ 仅支持文本分析，不支持图片',
+      '获取 API Key：<a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a>',
+    ],
+    models: [
+      { value: 'deepseek-chat', label: 'DeepSeek Chat（推荐）' },
+      { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner（思考模式）' },
+    ]
+  },
+  minimax: {
+    name: 'MiniMax',
+    endpoint: 'https://api.minimax.io/anthropic',
+    keyPlaceholder: '输入你的 API Key',
+    keyLink: 'https://platform.minimax.io',
+    hint: [
+      'MiniMax 官方 API（国内）',
+      '⚠️ 仅支持文本分析，不支持图片',
+      '获取 API Key：<a href="https://platform.minimax.io" target="_blank">MiniMax Platform</a>',
+    ],
+    models: [
+      { value: 'MiniMax-M2.7', label: 'MiniMax M2.7（推荐）' },
+      { value: 'MiniMax-M2.7-highspeed', label: 'MiniMax M2.7 高速版' },
+      { value: 'MiniMax-M2.5', label: 'MiniMax M2.5' },
+      { value: 'MiniMax-M2.5-highspeed', label: 'MiniMax M2.5 高速版' },
+    ]
+  },
   custom: {
     name: '自定义',
     endpoint: '',
