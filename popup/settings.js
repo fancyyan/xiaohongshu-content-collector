@@ -115,6 +115,24 @@ const API_PROVIDERS = {
       { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner（思考模式）' },
     ]
   },
+  qwen: {
+    name: 'Qwen（通义千问）',
+    endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    keyPlaceholder: 'sk-...',
+    keyLink: 'https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen',
+    hint: [
+      '阿里云通义千问 API（国内）',
+      '支持多模态分析（VL系列模型）',
+      '获取 API Key：<a href="https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen" target="_blank">阿里云百炼</a>',
+    ],
+    models: [
+      { value: 'qwen-vl-max-latest', label: 'Qwen VL Max（多模态，推荐）' },
+      { value: 'qwen-vl-plus-latest', label: 'Qwen VL Plus（多模态）' },
+      { value: 'qwen-max', label: 'Qwen Max（文本）' },
+      { value: 'qwen-plus', label: 'Qwen Plus（文本）' },
+      { value: 'qwen-turbo', label: 'Qwen Turbo（文本，便宜）' },
+    ]
+  },
   minimax: {
     name: 'MiniMax',
     endpoint: 'https://api.minimax.io/anthropic',
