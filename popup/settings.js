@@ -25,7 +25,8 @@ const DEFAULT_CONFIG = {
     apiKey: '',
     apiModel: 'google/gemini-2.0-flash-001',
     customEndpoint: '',
-  }
+  },
+  customPrompts: [],
 };
 
 // API 供应商配置
@@ -342,6 +343,9 @@ async function loadSettings() {
         };
       }
     }
+
+    // 加载自定义 Prompt
+    renderCustomPrompts(config.customPrompts || []);
   } catch (error) {
     console.error('加载设置失败:', error);
     showToast('加载设置失败');
@@ -393,9 +397,6 @@ function validateConfig(config) {
   }
 
   // 验证逻辑关系
-  if (config.rateLimit.maxPerMinute * 5 > config.rateLimit.maxPer5Min) {
-    errors.push('5分钟请求数应大于等于每分钟请求数的5倍');
-  }
   if (config.scrollBehavior.fatigueThreshold2 <= config.scrollBehavior.fatigueThreshold1) {
     errors.push('疲劳阈值2应大于疲劳阈值1');
   }
@@ -498,7 +499,8 @@ async function saveSettings() {
         customEndpoint: document.getElementById('customEndpoint').value.trim() || '',
         customModel: document.getElementById('customModel').value.trim() || '',
         endpoint: provider === 'custom' ? document.getElementById('customEndpoint').value.trim() : providerConfig.endpoint,
-      }
+      },
+      customPrompts: collectCustomPrompts(),
     };
 
     // 验证配置范围
@@ -691,6 +693,9 @@ function bindEvents() {
 
   // 测试 API 连接按钮
   document.getElementById('btnTestAPI').addEventListener('click', testAPIConnection);
+
+  // 添加自定义 Prompt
+  document.getElementById('btnAddPrompt').addEventListener('click', addCustomPromptRow);
 }
 
 // 重置API测试状态
@@ -841,4 +846,83 @@ function showToast(text) {
   toast.textContent = text;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ========== 自定义 Prompt 管理 ==========
+
+const PAGE_TYPE_OPTIONS = [
+  { value: 'detail', label: '详情页' },
+  { value: 'feed', label: '信息流' },
+  { value: 'profile', label: '博主主页' },
+];
+
+function renderCustomPrompts(prompts) {
+  const container = document.getElementById('customPromptList');
+  container.innerHTML = '';
+
+  if (!prompts || prompts.length === 0) {
+    container.innerHTML = '<p class="empty-prompt-hint">暂无自定义 Prompt，点击下方按钮添加</p>';
+    return;
+  }
+
+  prompts.forEach((p, index) => {
+    container.appendChild(createPromptRow(p, index));
+  });
+}
+
+function createPromptRow(prompt, index) {
+  const row = document.createElement('div');
+  row.className = 'custom-prompt-row';
+  row.dataset.index = index;
+
+  row.innerHTML = `
+    <div class="prompt-row-header">
+      <input type="text" class="prompt-name-input" placeholder="按钮名称（如：🎯 竞品分析）" value="${escapeAttr(prompt.name || '')}">
+      <select class="prompt-type-select">
+        ${PAGE_TYPE_OPTIONS.map(opt =>
+          `<option value="${opt.value}" ${prompt.pageType === opt.value ? 'selected' : ''}>${opt.label}</option>`
+        ).join('')}
+      </select>
+      <button class="btn-remove-prompt" title="删除">✕</button>
+    </div>
+    <textarea class="prompt-content-input" placeholder="输入 Prompt 内容，AI 会基于当前页面数据进行分析..." rows="3">${escapeAttr(prompt.content || '')}</textarea>
+  `;
+
+  row.querySelector('.btn-remove-prompt').addEventListener('click', () => {
+    row.remove();
+    const remaining = document.querySelectorAll('.custom-prompt-row');
+    if (remaining.length === 0) {
+      document.getElementById('customPromptList').innerHTML =
+        '<p class="empty-prompt-hint">暂无自定义 Prompt，点击下方按钮添加</p>';
+    }
+  });
+
+  return row;
+}
+
+function addCustomPromptRow() {
+  const container = document.getElementById('customPromptList');
+  const emptyHint = container.querySelector('.empty-prompt-hint');
+  if (emptyHint) emptyHint.remove();
+
+  const index = container.querySelectorAll('.custom-prompt-row').length;
+  container.appendChild(createPromptRow({ name: '', pageType: 'detail', content: '' }, index));
+}
+
+function collectCustomPrompts() {
+  const rows = document.querySelectorAll('.custom-prompt-row');
+  const prompts = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.prompt-name-input').value.trim();
+    const pageType = row.querySelector('.prompt-type-select').value;
+    const content = row.querySelector('.prompt-content-input').value.trim();
+    if (name && content) {
+      prompts.push({ name, pageType, content });
+    }
+  });
+  return prompts;
+}
+
+function escapeAttr(str) {
+  return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

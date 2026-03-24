@@ -42,6 +42,12 @@
       </div>
     </section>
 
+    <!-- 容量提示 -->
+    <div class="capacity-warning" id="capacityWarning" style="display: none;">
+      <span class="warning-icon">⚠️</span>
+      <span class="warning-text" id="capacityWarningText"></span>
+    </div>
+
     <!-- 来源分布 -->
     <section class="source-panel" id="sourcePanel">
       <h3 class="section-title">来源分布</h3>
@@ -67,6 +73,10 @@
         <div class="btn-row">
           <button class="btn btn-primary" id="btnStartScroll">▶ 开始自动浏览</button>
           <button class="btn btn-secondary" id="btnStopScroll" disabled>⏹ 停止</button>
+        </div>
+        <div class="control-row auto-analyze-row">
+          <label for="autoAnalyze">浏览结束后自动分析</label>
+          <input type="checkbox" id="autoAnalyze">
         </div>
       </div>
     </section>
@@ -100,8 +110,15 @@
 
     <!-- 底部操作 -->
     <footer class="footer">
-      <button class="btn btn-text" id="btnScanNow">🔍 立即扫描</button>
-      <button class="btn btn-danger-text" id="btnClear">🗑 清空数据</button>
+      <div class="footer-row">
+        <button class="btn btn-text" id="btnScanNow">🔍 立即扫描</button>
+        <button class="btn btn-text" id="btnBatchAnalyze">🤖 批量分析</button>
+        <button class="btn btn-text" id="btnHistory">📋 分析历史</button>
+      </div>
+      <div class="footer-row">
+        <button class="btn btn-text" id="btnCleanup">🧹 清理数据</button>
+        <button class="btn btn-danger-text" id="btnClear">🗑 清空数据</button>
+      </div>
     </footer>
   </div>
 

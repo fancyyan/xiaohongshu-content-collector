@@ -442,3 +442,102 @@ input:disabled::placeholder {
     box-shadow: 0 0 0 0 rgba(255, 149, 0, 0);
   }
 }
+
+/* 自定义 Prompt */
+.empty-prompt-hint {
+  font-size: 13px;
+  color: #86868b;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.custom-prompt-row {
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.prompt-row-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.prompt-name-input {
+  flex: 1;
+  border: 1px solid #e5e5e7;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: white;
+  outline: none;
+}
+
+.prompt-name-input:focus {
+  border-color: #007aff;
+}
+
+.prompt-type-select {
+  border: 1px solid #e5e5e7;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: white;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-remove-prompt {
+  background: none;
+  border: none;
+  color: #86868b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.btn-remove-prompt:hover {
+  background: #ffe5e5;
+  color: #ff3b30;
+}
+
+.prompt-content-input {
+  width: 100%;
+  border: 1px solid #e5e5e7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: white;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.prompt-content-input:focus {
+  border-color: #007aff;
+}
+
+.btn-add-prompt {
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed #c7c7cc;
+  border-radius: 10px;
+  background: none;
+  color: #007aff;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.2s;
+}
+
+.btn-add-prompt:hover {
+  border-color: #007aff;
+  background: #f0f7ff;
+}

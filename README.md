@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -32,6 +32,10 @@
 - **国内API支持** - 新增Qwen、DeepSeek、MiniMax等国内AI服务商
 - **图文分析** - 同时分析文字内容和图片视觉风格
 - **多种分析模式** - 内容分析、仿写文案、爆款潜力、标签建议、视觉诊断等
+- **批量分析** - 选择多条帖子一键批量 AI 分析，支持内容分析、爆款识别、标签分析
+- **自动分析** - 自动浏览结束后自动触发 AI 分析，无需手动操作
+- **分析历史** - 所有 AI 分析结果自动保存，支持查看、复制、删除
+- **自定义 Prompt** - 在设置中添加自定义分析模板，出现在 AI 面板按钮列表
 - **实时分析** - 在浏览器中直接进行 AI 分析
 
 ### 🛡️ 智能风控规避
@@ -44,6 +48,12 @@
 - **JSONL** - 逐行格式，便于处理
 - **Markdown** - 可读性强的文档格式
 - **训练数据** - 适合 AI 模型微调的格式
+
+### 💾 存储容量管理
+- **容量监控** - 实时显示存储使用量和容量百分比
+- **容量预警** - 接近上限（80%）和达到上限时自动提示
+- **多种清理方式** - 按时间、按导出状态、按数量灵活清理数据
+- **导出标记** - 导出后自动标记，支持清理已导出数据
 
 ### ⚙️ 可视化配置
 - **设置界面** - 完整的可视化设置页面
@@ -62,8 +72,8 @@
 
 1. **下载安装包**
    - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.0.4.zip`
-   - 或直接下载：[xhs-collector-beta-v1.0.4.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.4/xhs-collector-beta-v1.0.4.zip)
+   - 下载最新版本的 `xhs-collector-beta-v1.1.0.zip`
+   - 或直接下载：[xhs-collector-beta-v1.1.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.0/xhs-collector-beta-v1.1.0.zip)
 
 2. **解压文件**
    - 将下载的 zip 文件解压到本地文件夹

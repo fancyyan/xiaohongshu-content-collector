@@ -51,12 +51,13 @@ function createErrorResponse(error) {
 // ========== IndexedDB 存储（内联） ==========
 
 const DB_NAME = 'xhs_collector';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_POSTS = 'posts';
 const STORE_META = 'meta';
+const STORE_ANALYSES = 'analyses';
 
 class StorageManager {
-  constructor() { this.db = null; }
+  constructor() { this.db = null; this.capacityLimit = 1000; }
 
   async init() {
     if (this.db) return this.db;
@@ -74,6 +75,11 @@ class StorageManager {
         }
         if (!db.objectStoreNames.contains(STORE_META)) {
           db.createObjectStore(STORE_META, { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains(STORE_ANALYSES)) {
+          const aStore = db.createObjectStore(STORE_ANALYSES, { keyPath: 'id', autoIncrement: true });
+          aStore.createIndex('createdAt', 'createdAt', { unique: false });
+          aStore.createIndex('pageType', 'pageType', { unique: false });
         }
       };
       req.onsuccess = (e) => { this.db = e.target.result; resolve(this.db); };
@@ -182,6 +188,25 @@ class StorageManager {
     });
   }
 
+  async getRecentPosts(limit = 50) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readonly');
+      const index = tx.objectStore(STORE_POSTS).index('capturedAt');
+      const results = [];
+      const req = index.openCursor(null, 'prev');
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor && results.length < limit) {
+          results.push(cursor.value);
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => resolve(results);
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
   async getPostCount() {
     await this.init();
     return new Promise((resolve, reject) => {
@@ -270,12 +295,138 @@ class StorageManager {
     return JSON.stringify(training, null, 2);
   }
 
+  async getCapacityInfo() {
+    const count = await this.getPostCount();
+    return {
+      current: count,
+      limit: this.capacityLimit,
+      percentage: Math.round((count / this.capacityLimit) * 100),
+      isNearLimit: count >= this.capacityLimit * 0.8,
+      isReached: count >= this.capacityLimit,
+    };
+  }
+
+  setCapacityLimit(limit) {
+    this.capacityLimit = Math.max(100, Math.min(5000, limit));
+  }
+
+  async clearOldData(days = 7) {
+    await this.init();
+    const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readwrite');
+      const index = tx.objectStore(STORE_POSTS).index('capturedAt');
+      const range = IDBKeyRange.upperBound(cutoffTime);
+      let deletedCount = 0;
+      const req = index.openCursor(range);
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cursor.delete(); deletedCount++; cursor.continue(); }
+      };
+      tx.oncomplete = () => resolve({ ok: true, deleted: deletedCount });
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async clearExportedData() {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readwrite');
+      const store = tx.objectStore(STORE_POSTS);
+      let deletedCount = 0;
+      const req = store.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.value.exported) { cursor.delete(); deletedCount++; }
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => resolve({ ok: true, deleted: deletedCount });
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async markAsExported(noteIds) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readwrite');
+      const store = tx.objectStore(STORE_POSTS);
+      let markedCount = 0;
+      noteIds.forEach(noteId => {
+        const getReq = store.get(noteId);
+        getReq.onsuccess = () => {
+          const post = getReq.result;
+          if (post) { post.exported = true; post.exportedAt = Date.now(); store.put(post); markedCount++; }
+        };
+      });
+      tx.oncomplete = () => resolve({ marked: markedCount });
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async clearOldestData(count = 100) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_POSTS, 'readwrite');
+      const index = tx.objectStore(STORE_POSTS).index('capturedAt');
+      let deletedCount = 0;
+      const req = index.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor && deletedCount < count) { cursor.delete(); deletedCount++; cursor.continue(); }
+      };
+      tx.oncomplete = () => resolve({ ok: true, deleted: deletedCount });
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
   async clearAll() {
     await this.init();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction([STORE_POSTS, STORE_META], 'readwrite');
       tx.objectStore(STORE_POSTS).clear();
       tx.objectStore(STORE_META).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async saveAnalysis(analysis) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_ANALYSES, 'readwrite');
+      const record = { ...analysis, createdAt: Date.now() };
+      const req = tx.objectStore(STORE_ANALYSES).add(record);
+      req.onsuccess = () => resolve(req.result);
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async getAnalyses(limit = 20) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_ANALYSES, 'readonly');
+      const index = tx.objectStore(STORE_ANALYSES).index('createdAt');
+      const results = [];
+      const req = index.openCursor(null, 'prev');
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor && results.length < limit) {
+          results.push(cursor.value);
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => resolve(results);
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async deleteAnalysis(id) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE_ANALYSES, 'readwrite');
+      tx.objectStore(STORE_ANALYSES).delete(id);
       tx.oncomplete = () => resolve();
       tx.onerror = (e) => reject(e.target.error);
     });
@@ -293,6 +444,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'GET_STATS') {
     storage.getStats().then(s => sendResponse(s)).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  if (msg.type === 'GET_RECENT_POSTS') {
+    storage.getRecentPosts(msg.limit || 50).then(posts => sendResponse({ ok: true, posts })).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  if (msg.type === 'GET_CAPACITY_INFO') {
+    storage.getCapacityInfo().then(info => sendResponse(info)).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  if (msg.type === 'CLEAR_OLD_DATA') {
+    storage.clearOldData(msg.days || 7).then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  if (msg.type === 'CLEAR_EXPORTED_DATA') {
+    storage.clearExportedData().then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  if (msg.type === 'CLEAR_OLDEST_DATA') {
+    storage.clearOldestData(msg.count || 100).then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
     return true;
   }
   if (msg.type === 'EXPORT_DATA') {
@@ -331,16 +502,50 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch(e => sendResponse({ ok: false, error: sanitizeError(e) }));
     return true;
   }
+  // 保存分析结果
+  if (msg.type === 'SAVE_ANALYSIS') {
+    storage.saveAnalysis(msg.analysis).then(id => sendResponse({ ok: true, id })).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  // 获取历史分析
+  if (msg.type === 'GET_ANALYSES') {
+    storage.getAnalyses(msg.limit || 20).then(list => sendResponse({ ok: true, list })).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
+  // 删除分析记录
+  if (msg.type === 'DELETE_ANALYSIS') {
+    storage.deleteAnalysis(msg.id).then(() => sendResponse({ ok: true })).catch(e => sendResponse(createErrorResponse(e)));
+    return true;
+  }
 });
 
 // ========== 核心 ==========
 
 async function handleSavePosts(posts) {
   if (!posts || posts.length === 0) return { saved: 0, updated: 0 };
+
+  // 检查容量限制
+  const capacityInfo = await storage.getCapacityInfo();
+  if (capacityInfo.isReached) {
+    return {
+      saved: 0,
+      updated: 0,
+      error: 'CAPACITY_REACHED',
+      message: `已达到存储上限（${capacityInfo.limit}条），请先清理数据`
+    };
+  }
+
   const result = await storage.savePosts(posts);
   await storage.updateCaptureStats(result.saved);
   const count = await storage.getPostCount();
   updateBadge(count);
+
+  // 检查是否接近上限
+  const newCapacityInfo = await storage.getCapacityInfo();
+  if (newCapacityInfo.isNearLimit) {
+    result.warning = `存储空间已使用${newCapacityInfo.percentage}%，建议及时清理`;
+  }
+
   if (result.saved > 0) console.log(`[XHS] +${result.saved} new, ↻${result.updated} updated (total: ${count})`);
   return result;
 }
@@ -356,6 +561,12 @@ async function handleExport(format) {
   }
   const dataUrl = 'data:' + mimeType + ';charset=utf-8,' + encodeURIComponent(content);
   const downloadId = await chrome.downloads.download({ url: dataUrl, filename, saveAs: true });
+
+  // 标记所有数据为已导出
+  const posts = await storage.getAllPosts();
+  const noteIds = posts.map(p => p.noteId);
+  await storage.markAsExported(noteIds);
+
   return { ok: true, filename, downloadId };
 }
 

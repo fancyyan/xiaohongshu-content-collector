@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "小红书内容收集器 (公测版)",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "智能收集小红书笔记，支持AI多模态分析、自动分类标签、数据导出，内置防风控机制，本地存储保护隐私",
   "permissions": [
     "storage",

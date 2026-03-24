@@ -227,6 +227,24 @@
         if (msg.type === 'START_AUTO_SCROLL') { startAutoScroll(msg.config || {}); sendResponse({ ok: true }); return true; }
         if (msg.type === 'STOP_AUTO_SCROLL') { stopAutoScroll(); sendResponse({ ok: true }); return true; }
         if (msg.type === 'SCAN_DOM') { scanDOM(); sendResponse({ ok: true }); return true; }
+        if (msg.type === 'AUTO_ANALYZE') {
+          if (!OPENROUTER_KEY) { sendResponse({ ok: false, error: 'NO_API_KEY' }); return true; }
+          const ctx = getContextForPage();
+          if (!ctx.text) { sendResponse({ ok: false, error: 'NO_DATA' }); return true; }
+          // 选第一个 Prompt 静默执行
+          const prompts = getPromptsForType(ctx.type);
+          const firstKey = Object.keys(prompts)[0];
+          runSilentAnalysis(ctx, firstKey, prompts[firstKey]);
+          sendResponse({ ok: true });
+          return true;
+        }
+        if (msg.type === 'BATCH_ANALYZE') {
+          if (!OPENROUTER_KEY) { sendResponse({ ok: false, error: 'NO_API_KEY' }); return true; }
+          if (!msg.posts || msg.posts.length === 0) { sendResponse({ ok: false, error: 'NO_DATA' }); return true; }
+          runBatchAnalysis(msg.posts, msg.promptKey, msg.prompt);
+          sendResponse({ ok: true });
+          return true;
+        }
         return false;
       });
     } catch (e) {}
@@ -815,9 +833,15 @@
   }
 
   function getPromptsForType(type) {
-    if (type === 'profile') return PROMPTS_PROFILE;
-    if (type === 'feed') return PROMPTS_FEED;
-    return PROMPTS_DETAIL;
+    const builtIn = type === 'profile' ? PROMPTS_PROFILE : type === 'feed' ? PROMPTS_FEED : PROMPTS_DETAIL;
+    const custom = {};
+    const customPrompts = USER_CONFIG.customPrompts || [];
+    customPrompts.forEach(p => {
+      if (p.pageType === type && p.name && p.content) {
+        custom[p.name] = p.content;
+      }
+    });
+    return { ...builtIn, ...custom };
   }
 
   function getPageLabel(type) {
@@ -827,10 +851,19 @@
   }
 
   function getSystemPrompt(type) {
-    const vision = '你同时具备图片分析能力，请仔细观察提供的图片并将视觉分析融入回答。';
-    if (type === 'profile') return `你是一个专业的小红书博主运营顾问，擅长分析博主定位、内容策略、视觉品牌和商业变现。${vision}请用中文回答。`;
-    if (type === 'feed') return `你是一个专业的小红书内容趋势分析师，擅长洞察平台内容和视觉趋势、预判爆款方向、分析封面设计。${vision}请用中文回答。`;
-    return `你是一个专业的小红书内容分析师，擅长分析内容策略、写作技巧、视觉表现和用户运营。${vision}请用中文回答。`;
+    const suffix = [
+      '你同时具备图片分析能力，请仔细观察提供的图片并将视觉分析融入回答。',
+      '重要：回复中不要插入任何图片链接或![image](url)语法，只使用纯文字和Markdown文本格式。',
+      '请用中文回答。',
+    ].join('');
+
+    if (type === 'profile') {
+      return '你是一个专业的小红书博主运营顾问，擅长分析博主定位、内容策略、视觉品牌和商业变现。' + suffix;
+    }
+    if (type === 'feed') {
+      return '你是一个专业的小红书内容趋势分析师，擅长洞察平台内容和视觉趋势、预判爆款方向、分析封面设计。' + suffix;
+    }
+    return '你是一个专业的小红书内容分析师，擅长分析内容策略、写作技巧、视觉表现和用户运营。' + suffix;
   }
 
   // ---------- 多模态 AI 调用 ----------
@@ -867,20 +900,31 @@
       { role: 'user', content: userContent },
     ];
 
-    const resp = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_KEY}`,
-      },
-      body: JSON.stringify({ model: AI_MODEL, messages, max_tokens: 3000, temperature: 0.7 }),
-    });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`API 错误 ${resp.status}: ${err}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+
+    try {
+      const resp = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        },
+        body: JSON.stringify({ model: AI_MODEL, messages, max_tokens: 3000, temperature: 0.7 }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`API 错误 ${resp.status}: ${err}`);
+      }
+      const data = await resp.json();
+      return data.choices?.[0]?.message?.content || '未获得回复';
+    } catch (e) {
+      clearTimeout(timeout);
+      if (e.name === 'AbortError') throw new Error('AI 请求超时（60秒），请稍后重试');
+      throw e;
     }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || '未获得回复';
   }
 
   // 继续对话
@@ -903,20 +947,31 @@
       }
     });
 
-    const resp = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_KEY}`,
-      },
-      body: JSON.stringify({ model: AI_MODEL, messages, max_tokens: 3000, temperature: 0.7 }),
-    });
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`API 错误 ${resp.status}: ${err}`);
+    const controller2 = new AbortController();
+    const timeout2 = setTimeout(() => controller2.abort(), 60000);
+
+    try {
+      const resp = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_KEY}`,
+        },
+        body: JSON.stringify({ model: AI_MODEL, messages, max_tokens: 3000, temperature: 0.7 }),
+        signal: controller2.signal,
+      });
+      clearTimeout(timeout2);
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(`API 错误 ${resp.status}: ${err}`);
+      }
+      const data = await resp.json();
+      return data.choices?.[0]?.message?.content || '未获得回复';
+    } catch (e) {
+      clearTimeout(timeout2);
+      if (e.name === 'AbortError') throw new Error('AI 请求超时（60秒），请稍后重试');
+      throw e;
     }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || '未获得回复';
   }
 
   // HTML 转义
@@ -924,6 +979,58 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ---------- 静默分析（自动分析模式） ----------
+
+  async function runSilentAnalysis(ctx, promptKey, prompt) {
+    try {
+      const systemPrompt = getSystemPrompt(ctx.type);
+      const userContent = `${prompt}\n\n---\n以下是数据：\n${ctx.text}`;
+      const result = await callAI(systemPrompt, userContent, []);
+      safeSendMessage({
+        type: 'SAVE_ANALYSIS',
+        analysis: {
+          label: promptKey,
+          markdown: result,
+          pageType: ctx.type,
+          pageUrl: window.location.href,
+          pageTitle: document.title,
+        }
+      });
+      // 通知 popup 分析完成
+      safeSendMessage({ type: 'AUTO_ANALYSIS_DONE', label: promptKey });
+    } catch (e) {
+      console.warn('[XHS] 自动分析失败:', e.message);
+    }
+  }
+
+  // ---------- 批量分析 ----------
+
+  async function runBatchAnalysis(posts, promptKey, prompt) {
+    try {
+      const text = formatPostList(posts, '帖子');
+      const systemPrompt = [
+        '你是一个专业的小红书内容分析师，擅长分析内容策略、写作技巧和用户运营。',
+        '重要：回复中不要插入任何图片链接或![image](url)语法，只使用纯文字和Markdown文本格式。',
+        '请用中文回答。',
+      ].join('');
+      const userContent = `${prompt}\n\n---\n以下是数据：\n${text}`;
+      const result = await callAI(systemPrompt, userContent, []);
+      safeSendMessage({
+        type: 'SAVE_ANALYSIS',
+        analysis: {
+          label: `[批量] ${promptKey}`,
+          markdown: result,
+          pageType: 'batch',
+          pageUrl: window.location.href,
+          pageTitle: `批量分析 ${posts.length} 条帖子`,
+        }
+      });
+      safeSendMessage({ type: 'AUTO_ANALYSIS_DONE', label: `[批量] ${promptKey}` });
+    } catch (e) {
+      console.warn('[XHS] 批量分析失败:', e.message);
+    }
   }
 
   // ---------- UI ----------
@@ -1112,6 +1219,18 @@
                 { role: 'assistant', content: result }
               ]
             };
+
+            // 持久化保存分析结果（不含图片 base64，节省空间）
+            safeSendMessage({
+              type: 'SAVE_ANALYSIS',
+              analysis: {
+                label: promptKey,
+                markdown: result,
+                pageType: latestCtx.type,
+                pageUrl: window.location.href,
+                pageTitle: document.title,
+              }
+            });
 
             // 渲染结果 + 操作栏 + 对话框
             resultEl.innerHTML = renderMarkdown(result) +
@@ -1384,6 +1503,7 @@
   /** 行内格式：加粗、斜体、行内代码、链接、#标签 */
   function inlineFmt(text) {
     return text
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '[$1]')
       .replace(/`([^`]+)`/g, '<code class="xhs-md-icode">$1</code>')
       .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -29,6 +29,10 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **China-based API Support** - Added Qwen, DeepSeek, MiniMax for users in China
 - **Text & Image Analysis** - Analyzes both text content and visual style simultaneously
 - **Multiple Analysis Modes** - Content analysis, copywriting, viral potential, tag suggestions, visual diagnostics, etc.
+- **Batch Analysis** - Select multiple posts for one-click batch AI analysis with content analysis, viral detection, and tag analysis
+- **Auto Analysis** - Automatically triggers AI analysis after auto-browsing completes
+- **Analysis History** - All AI analysis results are auto-saved, with view, copy, and delete support
+- **Custom Prompts** - Add custom analysis templates in settings, displayed as buttons in the AI panel
 - **Real-time Analysis** - Direct AI analysis in the browser
 
 ### 🛡️ Smart Anti-Detection
@@ -41,6 +45,12 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **JSONL** - Line-by-line format for easy processing
 - **Markdown** - Highly readable document format
 - **Training Data** - Format suitable for AI model fine-tuning
+
+### 💾 Storage Capacity Management
+- **Capacity Monitoring** - Real-time display of storage usage and capacity percentage
+- **Capacity Warnings** - Automatic alerts when approaching (80%) or reaching storage limit
+- **Flexible Cleanup** - Clean data by age, export status, or count
+- **Export Tracking** - Auto-marks exported data, supports cleaning exported records
 
 ### ⚙️ Visual Configuration
 - **Settings Interface** - Complete visual settings page
@@ -59,8 +69,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.0.4.zip`
-   - Or direct download: [xhs-collector-beta-v1.0.4.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.0.4/xhs-collector-beta-v1.0.4.zip)
+   - Download the latest version `xhs-collector-beta-v1.1.0.zip`
+   - Or direct download: [xhs-collector-beta-v1.1.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.0/xhs-collector-beta-v1.1.0.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder
