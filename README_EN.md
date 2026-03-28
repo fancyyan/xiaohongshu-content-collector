@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -69,8 +69,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.1.1.zip`
-   - Or direct download: [xhs-collector-beta-v1.1.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.1/xhs-collector-beta-v1.1.1.zip)
+   - Download the latest version `xhs-collector-beta-v1.1.2.zip`
+   - Or direct download: [xhs-collector-beta-v1.1.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.2/xhs-collector-beta-v1.1.2.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder

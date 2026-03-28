@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -72,8 +72,8 @@
 
 1. **下载安装包**
    - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.1.1.zip`
-   - 或直接下载：[xhs-collector-beta-v1.1.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.1/xhs-collector-beta-v1.1.1.zip)
+   - 下载最新版本的 `xhs-collector-beta-v1.1.2.zip`
+   - 或直接下载：[xhs-collector-beta-v1.1.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.2/xhs-collector-beta-v1.1.2.zip)
 
 2. **解压文件**
    - 将下载的 zip 文件解压到本地文件夹
