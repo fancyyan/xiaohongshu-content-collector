@@ -342,35 +342,51 @@ const BATCH_PROMPTS = {
 
 function showBatchAnalyzePanel() {
   if (document.querySelector('.history-overlay')) return;
-  chrome.runtime.sendMessage({ type: 'GET_RECENT_POSTS', limit: 50 }, (resp) => {
-    if (chrome.runtime.lastError || !resp?.ok) {
-      showToast('加载帖子失败');
-      return;
-    }
 
-    const posts = resp.posts || [];
-    if (posts.length === 0) {
-      showToast('暂无帖子数据，请先采集');
-      return;
-    }
+  // 先加载用户配置，获取自定义 Prompt
+  chrome.storage.sync.get('userConfig', (result) => {
+    const customPrompts = result.userConfig?.customPrompts || [];
 
-    const overlay = document.createElement('div');
-    overlay.className = 'history-overlay';
+    chrome.runtime.sendMessage({ type: 'GET_RECENT_POSTS', limit: 50 }, (resp) => {
+      if (chrome.runtime.lastError || !resp?.ok) {
+        showToast('加载帖子失败');
+        return;
+      }
 
-    overlay.innerHTML = `
-      <div class="history-panel batch-panel">
-        <div class="history-header">
-          <span>🤖 批量分析</span>
-          <button class="history-close">✕</button>
-        </div>
-        <div class="batch-prompt-select">
-          <label>分析类型：</label>
-          <select id="batchPromptKey">
-            ${Object.keys(BATCH_PROMPTS).map(k => `<option value="${k}">${k}</option>`).join('')}
-          </select>
-        </div>
-        <div class="batch-select-bar">
-          <span class="batch-count">已选 <strong id="batchSelectedCount">0</strong> / ${posts.length} 条</span>
+      const posts = resp.posts || [];
+      if (posts.length === 0) {
+        showToast('暂无帖子数据，请先采集');
+        return;
+      }
+
+      // 合并默认和自定义 Prompt
+      const allPrompts = { ...BATCH_PROMPTS };
+      customPrompts.forEach(p => {
+        if (p.name && p.content) {
+          allPrompts[p.name] = { pageType: p.pageType, prompt: p.content };
+        }
+      });
+
+      const overlay = document.createElement('div');
+      overlay.className = 'history-overlay';
+
+      overlay.innerHTML = `
+        <div class="history-panel batch-panel">
+          <div class="history-header">
+            <span>🤖 批量分析</span>
+            <button class="history-close">✕</button>
+          </div>
+          <div class="batch-prompt-select">
+            <label>分析类型：</label>
+            <select id="batchPromptKey">
+              ${Object.keys(BATCH_PROMPTS).map(k => `<option value="${k}">${k}</option>`).join('')}
+              ${customPrompts.length > 0 ? '<optgroup label="自定义 Prompt">' : ''}
+              ${customPrompts.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('')}
+              ${customPrompts.length > 0 ? '</optgroup>' : ''}
+            </select>
+          </div>
+          <div class="batch-select-bar">
+            <span class="batch-count">已选 <strong id="batchSelectedCount">0</strong> / ${posts.length} 条</span>
           <button class="batch-select-all">全选</button>
         </div>
         <div class="history-list batch-list">
@@ -417,10 +433,11 @@ function showBatchAnalyzePanel() {
       const selectedIds = new Set([...overlay.querySelectorAll('.batch-check:checked')].map(c => c.value));
       const selectedPosts = posts.filter(p => selectedIds.has(p.noteId));
       const promptKey = overlay.querySelector('#batchPromptKey').value;
-      const promptCfg = BATCH_PROMPTS[promptKey];
+      const promptCfg = allPrompts[promptKey];
 
       overlay.remove();
       executeBatchAnalysis(selectedPosts, promptKey, promptCfg.prompt);
+    });
     });
   });
 }

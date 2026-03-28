@@ -1517,10 +1517,11 @@
     if (!lastAnalysis.markdown) return;
     const t = lastAnalysis.pageType;
     const typeLabel = t === 'profile' ? '博主分析' : t === 'feed' ? '信息流分析' : '帖子分析';
+    const typeSlug = t === 'profile' ? 'profile' : t === 'feed' ? 'feed' : 'note';
     const d = new Date(lastAnalysis.timestamp);
     const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
     const content = `# 小红书${typeLabel} - ${lastAnalysis.label}\n\n> 分析时间：${d.toLocaleString('zh-CN')}\n> 页面：${window.location.href}\n\n---\n\n${lastAnalysis.markdown}\n`;
-    safeSendMessage({ type: 'EXPORT_ANALYSIS', content, filename: `xhs_${typeLabel}_${ds}.md` }, (resp) => {
+    safeSendMessage({ type: 'EXPORT_ANALYSIS', content, filename: `xhs_${typeSlug}_${ds}.md` }, (resp) => {
       if (resp?.ok) showToast('✅ 已保存到下载目录');
     });
   }

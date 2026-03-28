@@ -912,11 +912,40 @@ function addCustomPromptRow() {
 function collectCustomPrompts() {
   const rows = document.querySelectorAll('.custom-prompt-row');
   const prompts = [];
+  const seenNames = new Set();
+
+  // 获取所有默认 Prompt 名称
+  const defaultPromptNames = new Set([
+    // 详情页
+    '📊 内容分析', '✍️ 仿写文案', '🔥 爆款潜力', '🏷️ 标签建议', '🎨 视觉诊断',
+    // 信息流
+    '📈 趋势洞察', '🎯 选题推荐', '🏆 爆文拆解', '📊 数据报告',
+    // 博主主页
+    '👤 博主画像', '📐 运营策略', '🔥 爆款复盘', '🎯 对标建议'
+  ]);
+
   rows.forEach(row => {
     const name = row.querySelector('.prompt-name-input').value.trim();
     const pageType = row.querySelector('.prompt-type-select').value;
     const content = row.querySelector('.prompt-content-input').value.trim();
+
     if (name && content) {
+      // 检查是否与默认 Prompt 重名
+      if (defaultPromptNames.has(name)) {
+        showToast(`❌ "${name}" 与默认 Prompt 重名，请修改`);
+        row.querySelector('.prompt-name-input').style.borderColor = '#ff3b30';
+        throw new Error(`Prompt 名称 "${name}" 与默认 Prompt 重名`);
+      }
+
+      // 检查是否与其他自定义 Prompt 重名
+      if (seenNames.has(name)) {
+        showToast(`❌ "${name}" 重复，请使用不同的名称`);
+        row.querySelector('.prompt-name-input').style.borderColor = '#ff3b30';
+        throw new Error(`Prompt 名称 "${name}" 重复`);
+      }
+
+      seenNames.add(name);
+      row.querySelector('.prompt-name-input').style.borderColor = '';
       prompts.push({ name, pageType, content });
     }
   });
