@@ -901,7 +901,7 @@
     ];
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     try {
       const resp = await fetch(API_ENDPOINT, {
@@ -922,7 +922,7 @@
       return data.choices?.[0]?.message?.content || '未获得回复';
     } catch (e) {
       clearTimeout(timeout);
-      if (e.name === 'AbortError') throw new Error('AI 请求超时（60秒），请稍后重试');
+      if (e.name === 'AbortError') throw new Error('AI 请求超时（2分钟）。提示：如果使用自定义 Prompt，请尝试缩短 Prompt 长度或减少分析的图片数量');
       throw e;
     }
   }
@@ -948,7 +948,7 @@
     });
 
     const controller2 = new AbortController();
-    const timeout2 = setTimeout(() => controller2.abort(), 60000);
+    const timeout2 = setTimeout(() => controller2.abort(), 120000);
 
     try {
       const resp = await fetch(API_ENDPOINT, {
@@ -969,7 +969,7 @@
       return data.choices?.[0]?.message?.content || '未获得回复';
     } catch (e) {
       clearTimeout(timeout2);
-      if (e.name === 'AbortError') throw new Error('AI 请求超时（60秒），请稍后重试');
+      if (e.name === 'AbortError') throw new Error('AI 请求超时（2分钟）。提示：如果使用自定义 Prompt，请尝试缩短 Prompt 长度或减少分析的图片数量');
       throw e;
     }
   }

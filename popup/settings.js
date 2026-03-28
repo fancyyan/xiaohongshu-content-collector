@@ -886,6 +886,10 @@ function createPromptRow(prompt, index) {
       <button class="btn-remove-prompt" title="删除">✕</button>
     </div>
     <textarea class="prompt-content-input" placeholder="输入 Prompt 内容，AI 会基于当前页面数据进行分析..." rows="3">${escapeAttr(prompt.content || '')}</textarea>
+    <div class="prompt-hint">
+      <span class="prompt-char-count">${(prompt.content || '').length} 字符</span>
+      <span class="prompt-tip">💡 建议控制在 500 字符以内，过长可能导致分析超时</span>
+    </div>
   `;
 
   row.querySelector('.btn-remove-prompt').addEventListener('click', () => {
@@ -894,6 +898,22 @@ function createPromptRow(prompt, index) {
     if (remaining.length === 0) {
       document.getElementById('customPromptList').innerHTML =
         '<p class="empty-prompt-hint">暂无自定义 Prompt，点击下方按钮添加</p>';
+    }
+  });
+
+  // 添加字符计数实时更新
+  const textarea = row.querySelector('.prompt-content-input');
+  const charCount = row.querySelector('.prompt-char-count');
+  textarea.addEventListener('input', () => {
+    const length = textarea.value.length;
+    charCount.textContent = `${length} 字符`;
+    // 超过 500 字符时变红提示
+    if (length > 500) {
+      charCount.style.color = '#ff3b30';
+      charCount.style.fontWeight = 'bold';
+    } else {
+      charCount.style.color = '';
+      charCount.style.fontWeight = '';
     }
   });
 
