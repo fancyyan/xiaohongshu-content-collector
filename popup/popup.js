@@ -438,7 +438,7 @@ function showBatchAnalyzePanel() {
       overlay.remove();
       executeBatchAnalysis(selectedPosts, promptKey, promptCfg.prompt);
     });
-    });
+  });
   });
 }
 
