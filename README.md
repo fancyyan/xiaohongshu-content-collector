@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -31,7 +31,9 @@
 - **多供应商支持** - OpenRouter、Anthropic、OpenAI、Google AI、Qwen（通义千问）、DeepSeek、MiniMax、自定义端点
 - **国内API支持** - 新增Qwen、DeepSeek、MiniMax等国内AI服务商
 - **图文分析** - 同时分析文字内容和图片视觉风格
+- **🎬 视频截帧分析** - 自动截取视频多帧画面（默认6帧，可配置2-12帧），AI 逐帧分析叙事结构和画面质量
 - **多种分析模式** - 内容分析、仿写文案、爆款潜力、标签建议、视觉诊断等
+- **视频专属分析** - 完播率诊断、仿拍脚本生成、爆款对标分析
 - **批量分析** - 选择多条帖子一键批量 AI 分析，支持内容分析、爆款识别、标签分析
 - **自动分析** - 自动浏览结束后自动触发 AI 分析，无需手动操作
 - **分析历史** - 所有 AI 分析结果自动保存，支持查看、复制、删除
@@ -72,8 +74,8 @@
 
 1. **下载安装包**
    - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.1.2.zip`
-   - 或直接下载：[xhs-collector-beta-v1.1.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.2/xhs-collector-beta-v1.1.2.zip)
+   - 下载最新版本的 `xhs-collector-beta-v1.2.0.zip`
+   - 或直接下载：[xhs-collector-beta-v1.2.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.0/xhs-collector-beta-v1.2.0.zip)
 
 2. **解压文件**
    - 将下载的 zip 文件解压到本地文件夹
@@ -191,12 +193,19 @@
 
 **支持的分析类型：**
 
-**详情页分析：**
+**详情页分析（图文）：**
 - 📊 内容分析 - 分析主题、风格、受众等
 - ✍️ 仿写文案 - 模仿风格写新文案
 - 🔥 爆款潜力 - 评估爆款可能性
 - 🏷️ 标签建议 - 推荐精准标签
 - 🎨 视觉诊断 - 分析图片风格和构图
+
+**视频笔记分析（v1.2.0 新增）：**
+- 🎬 视频分析 - 场景描述、拍摄风格、叙事结构
+- 🔥 完播率诊断 - 开头钩子、节奏分析、跳出风险点
+- ✍️ 仿拍脚本 - 分镜脚本、拍摄建议、可复用模板
+- 🏷️ 标签建议 - 基于视频画面推荐精准话题标签
+- 📊 爆款对标 - 封面帧选择建议、与爆款差距分析
 
 **信息流分析：**
 - 📈 趋势洞察 - 分析热门主题和趋势
@@ -217,6 +226,10 @@
 - 信息流：默认 8 张（建议 5-20）
 - 博主主页：默认 8 张（建议 5-30）
 - 设置为 0 表示无限制
+
+**视频截帧数量（v1.2.0 新增）：**
+- 默认 6 帧，范围 2-12 帧
+- 帧数越多分析越细致，但消耗 Token 更多
 
 **频率控制：**
 - 每分钟最大请求数：默认 25（建议 15-35）
@@ -269,6 +282,12 @@
 
 ### Q: 插件安全吗？会不会泄露数据？
 A: 完全安全。所有数据都存储在本地浏览器的 IndexedDB 中，不会上传到任何服务器。API Key 也是加密存储在本地。
+
+### Q: 视频分析会上传原始视频吗？
+A: 不会。截帧在浏览器本地通过 `<canvas>` 完成，只将截取的 JPEG 图片发给 AI 分析，原始视频文件完全不上传。
+
+### Q: 视频截帧数量设置多少合适？
+A: 默认 6 帧适合大多数视频。想省 Token 可以设 2-4 帧；视频较长、想分析节奏细节可以设 8-12 帧。
 
 ### Q: 会不会被小红书封号？
 A: 插件采用被动拦截方式，模拟真实用户行为，并有智能频率控制。正常使用不会触发风控。建议使用保守配置。

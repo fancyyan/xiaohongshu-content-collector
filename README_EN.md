@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -28,7 +28,9 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **Multiple Provider Support** - OpenRouter, Anthropic, OpenAI, Google AI, Qwen (Tongyi Qianwen), DeepSeek, MiniMax, and custom endpoints
 - **China-based API Support** - Added Qwen, DeepSeek, MiniMax for users in China
 - **Text & Image Analysis** - Analyzes both text content and visual style simultaneously
+- **🎬 Video Frame Analysis** - Automatically captures multiple frames from videos (default 6 frames, configurable 2-12), AI analyzes narrative structure and video quality frame by frame
 - **Multiple Analysis Modes** - Content analysis, copywriting, viral potential, tag suggestions, visual diagnostics, etc.
+- **Video-specific Analysis** - Completion rate diagnosis, imitation script generation, viral benchmark analysis
 - **Batch Analysis** - Select multiple posts for one-click batch AI analysis with content analysis, viral detection, and tag analysis
 - **Auto Analysis** - Automatically triggers AI analysis after auto-browsing completes
 - **Analysis History** - All AI analysis results are auto-saved, with view, copy, and delete support
@@ -69,8 +71,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.1.2.zip`
-   - Or direct download: [xhs-collector-beta-v1.1.2.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.1.2/xhs-collector-beta-v1.1.2.zip)
+   - Download the latest version `xhs-collector-beta-v1.2.0.zip`
+   - Or direct download: [xhs-collector-beta-v1.2.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.0/xhs-collector-beta-v1.2.0.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder
@@ -188,12 +190,19 @@ Automatically scrolls the page, simulates real user browsing behavior, and colle
 
 **Supported Analysis Types:**
 
-**Detail Page Analysis:**
+**Detail Page Analysis (Image Posts):**
 - 📊 Content Analysis - Analyze theme, style, audience, etc.
 - ✍️ Copywriting - Mimic style to write new copy
 - 🔥 Viral Potential - Evaluate viral possibility
 - 🏷️ Tag Suggestions - Recommend precise tags
 - 🎨 Visual Diagnostics - Analyze image style and composition
+
+**Video Post Analysis (New in v1.2.0):**
+- 🎬 Video Analysis - Scene description, shooting style, narrative structure
+- 🔥 Completion Rate Diagnosis - Hook strength, pacing analysis, drop-off risk points
+- ✍️ Imitation Script - Storyboard script, shooting tips, reusable templates
+- 🏷️ Tag Suggestions - Recommend precise tags based on video frames
+- 📊 Viral Benchmark - Cover frame selection, gap analysis vs viral videos
 
 **Feed Analysis:**
 - 📈 Trend Insights - Analyze popular topics and trends
@@ -214,6 +223,10 @@ Automatically scrolls the page, simulates real user browsing behavior, and colle
 - Feed: Default 8 (Recommended 5-20)
 - User profile: Default 8 (Recommended 5-30)
 - Set to 0 for unlimited
+
+**Video Frame Count (New in v1.2.0):**
+- Default 6 frames, range 2-12
+- More frames = more detailed analysis, but higher token usage
 
 **Rate Control:**
 - Max requests per minute: Default 25 (Recommended 15-35)
@@ -266,6 +279,12 @@ If you have your own API service:
 
 ### Q: Is the extension safe? Will it leak data?
 A: Completely safe. All data is stored locally in the browser's IndexedDB and is not uploaded to any server. API Keys are also encrypted and stored locally.
+
+### Q: Does video analysis upload the original video?
+A: No. Frames are captured locally in the browser using the `<canvas>` API. Only the extracted JPEG screenshots are sent to the AI — the original video file is never uploaded.
+
+### Q: How many frames should I set for video analysis?
+A: The default 6 frames works well for most videos. Use 2-4 frames to save tokens, or 8-12 frames for longer videos where you want more detailed pacing analysis.
 
 ### Q: Will I get banned by Xiaohongshu?
 A: The extension uses passive interception, simulates real user behavior, and has intelligent rate control. Normal use will not trigger anti-detection. Conservative configuration is recommended.
