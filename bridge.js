@@ -51,6 +51,8 @@
       feed: 8,
       profile: 8,
     },
+    // 视频截帧数量
+    videoFrameCount: 6,
     // 滚动行为配置
     scrollBehavior: {
       upScrollChance: 0.1,
@@ -677,6 +679,78 @@
     return valid;
   }
 
+  // ---------- 视频截帧 ----------
+
+  /**
+   * 从视频 URL 均匀截取多帧，返回 base64 数组
+   * @param {string} videoUrl  MP4 直链
+   * @param {number} duration  视频时长（秒），0 则用 loadedmetadata 自动获取
+   * @param {number} frameCount  截帧数量，默认 6
+   * @param {function} onProgress  进度回调 (done, total)
+   */
+  function captureVideoFrames(videoUrl, duration, frameCount = 6, onProgress) {
+    return new Promise((resolve) => {
+      if (!videoUrl) { resolve([]); return; }
+
+      const video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.preload = 'metadata';
+      video.src = videoUrl;
+
+      const frames = [];
+      let snapTimes = [];
+      let currentIndex = 0;
+
+      function snapFrame(time) {
+        return new Promise((res) => {
+          video.currentTime = time;
+          const onSeeked = () => {
+            video.removeEventListener('seeked', onSeeked);
+            try {
+              const canvas = document.createElement('canvas');
+              // 保持原始宽高比，限制最大宽度 360
+              const ratio = video.videoHeight / video.videoWidth || 16 / 9;
+              canvas.width = 360;
+              canvas.height = Math.round(360 * ratio);
+              canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+              res(canvas.toDataURL('image/jpeg', 0.75));
+            } catch (e) {
+              res(null);
+            }
+          };
+          video.addEventListener('seeked', onSeeked);
+        });
+      }
+
+      async function captureAll() {
+        for (let i = 0; i < snapTimes.length; i++) {
+          const b64 = await snapFrame(snapTimes[i]);
+          if (b64) frames.push(b64);
+          if (onProgress) onProgress(i + 1, snapTimes.length);
+        }
+        video.src = '';
+        resolve(frames);
+      }
+
+      video.addEventListener('loadedmetadata', () => {
+        const total = duration > 0 ? duration : video.duration;
+        // 均匀分布截帧点，避开最后1秒（可能是黑帧）
+        const usable = Math.max(total - 1, 1);
+        snapTimes = [];
+        for (let i = 0; i < frameCount; i++) {
+          snapTimes.push(parseFloat(((usable / (frameCount - 1 || 1)) * i).toFixed(1)));
+        }
+        captureAll();
+      });
+
+      video.addEventListener('error', () => { resolve([]); });
+      setTimeout(() => { video.src = ''; resolve(frames); }, 30000);
+
+      video.load();
+    });
+  }
+
   // ---------- 图片 URL 收集 ----------
 
   /**
@@ -750,6 +824,14 @@
     '🎨 视觉诊断': '请专门分析这篇帖子的视觉表现：\n1. 图片整体风格（日系/韩系/简约/ins风/国风等）\n2. 构图分析（每张图的构图技巧）\n3. 色彩搭配评分(1-10)及建议\n4. 封面图吸引力评估\n5. 与同类爆款帖子的视觉差距\n6. 具体的视觉优化建议（拍摄角度、滤镜、排版等）',
   };
 
+  const PROMPTS_VIDEO = {
+    '🎬 视频分析': '我将提供一段小红书视频的多帧截图（按时间顺序均匀截取）以及文字信息。请从以下维度分析：\n1. 视频内容主题和定位\n2. 场景描述（每帧的画面内容，推断视频叙事结构）\n3. 拍摄风格（镜头语言、画面质量、剪辑节奏感）\n4. 标题吸引力评分(1-10)\n5. 目标受众画像\n6. 互动数据解读（点赞/收藏/评论/分享比例说明什么）\n请用简洁的中文回答。',
+    '🔥 完播率诊断': '我将提供这段小红书视频的多帧截图和基本信息。请评估：\n1. 完播率潜力评分(1-10)，并说明理由\n2. 开头（第1帧）是否有足够的留存钩子\n3. 视频节奏是否适中（根据帧间内容变化判断）\n4. 哪些画面元素最吸引人、哪些可能导致跳出\n5. 给出3条提升完播率的具体建议',
+    '✍️ 仿拍脚本': '根据这段视频的截帧和文字信息，请生成一份可复用的拍摄脚本：\n1. 视频整体结构拆解（开头/中间/结尾各占比）\n2. 分镜脚本（参考截帧，列出关键画面的拍摄方式）\n3. 文案脚本建议（标题 + 正文 + 话题标签）\n4. 拍摄设备和场景建议\n5. 适合复用这个模板的其他选题',
+    '🏷️ 标签建议': '根据这段视频的画面内容和文字信息，请：\n1. 分析当前标签是否精准\n2. 推荐10个更适合视频内容的话题标签（#xxx格式）\n3. 建议3个搜索优化关键词\n4. 分析视频最可能触达的用户圈层和推荐场景',
+    '📊 爆款对标': '请基于这段视频的截帧和数据，给出爆款对标分析：\n1. 爆款指数评分(1-10)\n2. 画面表现力亮点（哪些帧最抓眼球）\n3. 与同类爆款视频的差距\n4. 封面帧选择建议（哪一帧最适合做封面）\n5. 5条具体优化建议（画面/剪辑/文案/标签/发布时间）',
+  };
+
   const PROMPTS_FEED = {
     '📈 趋势洞察': '请分析以下推荐信息流中的帖子（含封面图），总结：\n1. 当前平台推荐的热门主题 TOP5\n2. 封面图的主流视觉风格（什么样的封面更容易被推荐）\n3. 高互动帖子的共同特征（文字+视觉）\n4. 值得关注的选题方向\n5. 整体内容调性分析',
     '🎯 选题推荐': '基于以下推荐信息流的内容和视觉趋势，请：\n1. 推荐5个当前最有潜力的选题方向\n2. 每个选题给出标题示例 + 封面构思\n3. 分析这些选题为什么可能火\n4. 给出每个选题的配图风格建议',
@@ -772,15 +854,26 @@
     if (p.content) parts.push(`正文：${p.content}`);
     if (p.authorName) parts.push(`作者：${p.authorName}`);
     if (p.tags && p.tags.length) parts.push(`标签：${p.tags.map(t => '#' + t).join(' ')}`);
-    parts.push(`类型：${p.type === 'video' ? '视频笔记' : '图文笔记'}`);
+    if (p.type === 'video') {
+      const dur = p.videoDuration || 0;
+      const durStr = dur > 0 ? `${Math.floor(dur / 60) > 0 ? Math.floor(dur / 60) + '分' : ''}${dur % 60}秒` : '未知';
+      parts.push(`类型：视频笔记（时长 ${durStr}）`);
+    } else {
+      parts.push(`类型：图文笔记`);
+    }
     const stats = [];
     if (p.likedCount) stats.push(`${p.likedCount}赞`);
     if (p.collectedCount) stats.push(`${p.collectedCount}藏`);
     if (p.commentCount) stats.push(`${p.commentCount}评`);
+    if (p.shareCount) stats.push(`${p.shareCount}转`);
     if (stats.length) parts.push(`互动：${stats.join(' ')}`);
     if (p.ipLocation) parts.push(`IP属地：${p.ipLocation}`);
-    const imgCount = (p.images?.length || 0) + (p.coverUrl ? 1 : 0);
-    if (imgCount > 0) parts.push(`图片数：${imgCount}张`);
+    if (p.type === 'video' && p.videoUrl) {
+      parts.push(`（AI分析将基于视频截帧图像）`);
+    } else {
+      const imgCount = (p.images?.length || 0) + (p.coverUrl ? 1 : 0);
+      if (imgCount > 0) parts.push(`图片数：${imgCount}张`);
+    }
     return parts.join('\n');
   }
 
@@ -832,8 +925,15 @@
     return { type: 'feed', text: null };
   }
 
+  function isVideoDetail() {
+    return currentPostData?.type === 'video' && !!currentPostData?.videoUrl;
+  }
+
   function getPromptsForType(type) {
-    const builtIn = type === 'profile' ? PROMPTS_PROFILE : type === 'feed' ? PROMPTS_FEED : PROMPTS_DETAIL;
+    const builtIn = type === 'profile' ? PROMPTS_PROFILE
+      : type === 'feed' ? PROMPTS_FEED
+      : (type === 'detail' && isVideoDetail()) ? PROMPTS_VIDEO
+      : PROMPTS_DETAIL;
     const custom = {};
     const customPrompts = USER_CONFIG.customPrompts || [];
     customPrompts.forEach(p => {
@@ -847,6 +947,7 @@
   function getPageLabel(type) {
     if (type === 'profile') return '👤 博主分析';
     if (type === 'feed') return '📈 信息流分析';
+    if (type === 'detail' && isVideoDetail()) return '🎬 视频分析';
     return '🤖 AI 分析';
   }
 
@@ -862,6 +963,9 @@
     }
     if (type === 'feed') {
       return '你是一个专业的小红书内容趋势分析师，擅长洞察平台内容和视觉趋势、预判爆款方向、分析封面设计。' + suffix;
+    }
+    if (type === 'detail' && isVideoDetail()) {
+      return '你是一个专业的短视频内容分析师，擅长分析小红书视频的叙事结构、画面表现、完播率优化和爆款规律。我提供给你的图片是视频的均匀截帧，按时间顺序排列，代表视频各阶段的画面内容。请基于这些截帧推断视频的叙事节奏和内容质量。重要：回复中不要插入任何图片链接或![image](url)语法，只使用纯文字和Markdown文本格式。请用中文回答。';
     }
     return '你是一个专业的小红书内容分析师，擅长分析内容策略、写作技巧、视觉表现和用户运营。' + suffix;
   }
@@ -1119,9 +1223,11 @@
             <span class="xhs-status-text">${hasData
               ? `<span class="xhs-status-dot ready"></span>帖子已加载`
               : `<span class="xhs-status-dot empty"></span>等待加载`}</span>
-            <span class="xhs-status-count">${imgUrls.length > 0
-              ? `📸 ${imgUrls.length} 张图片可供分析`
-              : '暂无图片'}</span>
+            <span class="xhs-status-count">${isVideoDetail()
+              ? `🎬 视频笔记 · 点击分析自动截帧`
+              : imgUrls.length > 0
+                ? `📸 ${imgUrls.length} 张图片可供分析`
+                : '暂无图片'}</span>
           </div>
         </div>
         `}
@@ -1187,19 +1293,32 @@
           panel.querySelectorAll('.xhs-action-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
           btn.style.opacity = '1';
 
-          // 获取图片
-          const imgUrls = getImageUrls(latestCtx.type);
+          // 获取图片 / 视频截帧
           let base64Images = [];
+          const isVideo = latestCtx.type === 'detail' && isVideoDetail();
 
-          if (imgUrls.length > 0) {
-            resultEl.innerHTML = '<div class="loading">📸 正在加载图片 (0/' + imgUrls.length + ')</div>';
-            base64Images = await prepareImages(imgUrls, (done, total) => {
+          if (isVideo) {
+            const vUrl = currentPostData.videoUrl;
+            const vDur = currentPostData.videoDuration || 0;
+            const frameCount = USER_CONFIG.videoFrameCount || 6;
+            resultEl.innerHTML = `<div class="loading">🎬 正在截取视频帧 (0/${frameCount})</div>`;
+            base64Images = await captureVideoFrames(vUrl, vDur, frameCount, (done, total) => {
               const loadingEl = resultEl.querySelector('.loading');
-              if (loadingEl) loadingEl.textContent = `📸 正在加载图片 (${done}/${total})`;
+              if (loadingEl) loadingEl.textContent = `🎬 正在截取视频帧 (${done}/${total})`;
             });
-            resultEl.innerHTML = `<div class="loading">🤖 AI 正在分析 ${base64Images.length} 张图片 + 文字...</div>`;
+            resultEl.innerHTML = `<div class="loading">🤖 AI 正在分析 ${base64Images.length} 帧画面 + 文字...</div>`;
           } else {
-            resultEl.innerHTML = '<div class="loading">🤖 AI 正在分析中...</div>';
+            const imgUrls = getImageUrls(latestCtx.type);
+            if (imgUrls.length > 0) {
+              resultEl.innerHTML = '<div class="loading">📸 正在加载图片 (0/' + imgUrls.length + ')</div>';
+              base64Images = await prepareImages(imgUrls, (done, total) => {
+                const loadingEl = resultEl.querySelector('.loading');
+                if (loadingEl) loadingEl.textContent = `📸 正在加载图片 (${done}/${total})`;
+              });
+              resultEl.innerHTML = `<div class="loading">🤖 AI 正在分析 ${base64Images.length} 张图片 + 文字...</div>`;
+            } else {
+              resultEl.innerHTML = '<div class="loading">🤖 AI 正在分析中...</div>';
+            }
           }
 
           try {

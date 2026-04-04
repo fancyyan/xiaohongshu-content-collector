@@ -170,6 +170,24 @@
         </div>
       </section>
 
+      <!-- 视频截帧配置 -->
+      <section class="setting-section">
+        <h2 class="section-title">
+          <span class="icon">🎬</span>
+          视频截帧设置
+        </h2>
+        <p class="section-desc">分析视频笔记时，从视频中均匀截取帧数发送给 AI。帧数越多分析越细致，但耗时更长、消耗更多 Token。</p>
+
+        <div class="setting-item">
+          <label for="videoFrameCount">
+            <span class="label-text">截帧数量</span>
+            <span class="label-hint">建议 4-8 帧，最多 12 帧</span>
+          </label>
+          <input type="number" id="videoFrameCount" min="2" max="12" value="6">
+          <span class="unit">帧</span>
+        </div>
+      </section>
+
       <!-- 频率控制配置 -->
       <section class="setting-section">
         <h2 class="section-title">

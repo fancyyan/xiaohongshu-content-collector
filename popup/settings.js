@@ -9,6 +9,7 @@ const DEFAULT_CONFIG = {
     feed: 8,
     profile: 8,
   },
+  videoFrameCount: 6,
   rateLimit: {
     maxPerMinute: 25,
     maxPer5Min: 80,
@@ -311,6 +312,7 @@ async function loadSettings() {
     document.getElementById('imageDetail').value = config.imageLimit.detail;
     document.getElementById('imageFeed').value = config.imageLimit.feed;
     document.getElementById('imageProfile').value = config.imageLimit.profile;
+    document.getElementById('videoFrameCount').value = config.videoFrameCount ?? 6;
 
     document.getElementById('rateMaxPerMinute').value = config.rateLimit.maxPerMinute;
     document.getElementById('rateMaxPer5Min').value = config.rateLimit.maxPer5Min;
@@ -481,6 +483,7 @@ async function saveSettings() {
         feed: parseInt(document.getElementById('imageFeed').value) || 0,
         profile: parseInt(document.getElementById('imageProfile').value) || 0,
       },
+      videoFrameCount: Math.min(12, Math.max(2, parseInt(document.getElementById('videoFrameCount').value) || 6)),
       rateLimit: {
         maxPerMinute: parseInt(document.getElementById('rateMaxPerMinute').value) || 25,
         maxPer5Min: parseInt(document.getElementById('rateMaxPer5Min').value) || 80,
