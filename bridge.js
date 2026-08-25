@@ -596,7 +596,7 @@
 
   // API 配置（从用户配置中读取）
   let OPENROUTER_KEY = '';
-  let AI_MODEL = 'google/gemini-2.0-flash-001';
+  let AI_MODEL = 'google/gemini-3.7-flash';
   let API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
   let API_PROVIDER = 'openrouter';
 

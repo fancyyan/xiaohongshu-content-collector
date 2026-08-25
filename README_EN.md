@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -27,6 +27,7 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 ### 🤖 AI Multimodal Analysis
 - **Multiple Provider Support** - OpenRouter, Anthropic, OpenAI, Google AI, Qwen (Tongyi Qianwen), DeepSeek, MiniMax, and custom endpoints
 - **China-based API Support** - Added Qwen, DeepSeek, MiniMax for users in China
+- **🔄 Dynamic Model List Refresh** - OpenRouter / Qwen can fetch all latest available models from the official `/models` endpoint and merge them into the dropdown with one click (locally cached for 7 days); auto-updates after a successful connection test. The built-in model list is updated to the 2026-08 current generation
 - **Text & Image Analysis** - Analyzes both text content and visual style simultaneously
 - **🎬 Video Frame Analysis** - Automatically captures multiple frames from videos (default 6 frames, configurable 2-12), AI analyzes narrative structure and video quality frame by frame
 - **Multiple Analysis Modes** - Content analysis, copywriting, viral potential, tag suggestions, visual diagnostics, etc.
@@ -71,8 +72,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 
 1. **Download Package**
    - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.2.0.zip`
-   - Or direct download: [xhs-collector-beta-v1.2.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.0/xhs-collector-beta-v1.2.0.zip)
+   - Download the latest version `xhs-collector-beta-v1.2.1.zip`
+   - Or direct download: [xhs-collector-beta-v1.2.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.1/xhs-collector-beta-v1.2.1.zip)
 
 2. **Extract Files**
    - Extract the downloaded zip file to a local folder
@@ -122,7 +123,7 @@ If you want to use AI analysis features, you need to configure an API:
 
 3. **Configure API**
    - Enter API Key
-   - Select AI Model (Recommended: Gemini 2.0 Flash)
+   - Select AI Model (Recommended: Gemini 3.7 Flash, or click "🔄 Refresh Model List" to fetch all latest models)
    - Click "Save"
 
 ### Step 2: Start Collecting
@@ -293,7 +294,10 @@ A: The extension uses passive interception, simulates real user behavior, and ha
 A: Yes. Data collection features don't require an API Key. Only AI analysis features need API configuration.
 
 ### Q: Which AI models are supported?
-A: Supports models from OpenRouter, Anthropic, OpenAI, Google AI, and other providers. Recommended: OpenRouter's Gemini 2.0 Flash (best cost-performance).
+A: Supports models from OpenRouter, Anthropic, OpenAI, Google AI, Qwen (multimodal), DeepSeek (text only), and MiniMax (text only). Recommended: OpenRouter's Gemini 3.7 Flash (multimodal, great value) or Qwen VL Max (fast in China, multimodal). You can click "🔄 Refresh Model List" in settings to pull the provider's full latest model list.
+
+### Q: How to refresh the model list when it looks outdated?
+A: OpenRouter and Qwen providers offer a "🔄 Refresh Model List" button in the settings page. OpenRouter requires no API key to refresh; Qwen refreshes after you enter and test your API Key. It fetches all available models from the official `/models` endpoint, merges them into the dropdown, and caches locally for 7 days — no need to wait for a new release when new models appear.
 
 ### Q: How to export data?
 A: Click the extension icon, select format in the "Data Export" section (JSON/JSONL/Markdown/Training Data), and click the corresponding button to export.
@@ -311,7 +315,7 @@ A: Stored in the browser's IndexedDB, path: Chrome DevTools → Application → 
 A: Click the extension icon and click the "Clear Data" button at the bottom. Note: This operation is irreversible.
 
 ### Q: What are the API costs?
-A: Depends on the model used and number of images. Using Gemini 2.0 Flash + default image count, approximately $0.5-1 per 100 analyses.
+A: Depends on the model used and number of images. Using Gemini 3.7 Flash (or similar current-gen multimodal models) + default image count, costs are very low — typically under $0.5 per 100 analyses.
 
 ---
 

@@ -262,6 +262,54 @@ input:disabled::placeholder {
   color: #34c759;
 }
 
+/* 模型列表刷新 */
+.model-refresh-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-refresh-models {
+  padding: 6px 12px;
+  background: #f0f0f0;
+  color: #007aff;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-refresh-models:hover:not(:disabled) {
+  background: #e5e5e7;
+}
+
+.btn-refresh-models:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.model-refresh-status {
+  font-size: 12px;
+  color: #86868b;
+  min-height: 16px;
+}
+
+.model-refresh-status.success {
+  color: #34c759;
+}
+
+.model-refresh-status.error {
+  color: #ff3b30;
+}
+
+.model-refresh-status.loading {
+  color: #007aff;
+}
+
 #apiTestResult.error {
   color: #ff3b30;
 }

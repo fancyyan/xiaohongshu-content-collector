@@ -2,6 +2,21 @@
 
 所有重要的项目变更都会记录在此文件中。
 
+## [1.2.1] - 2026-08-25
+
+### 新增功能
+- 🔄 **模型列表动态刷新**：OpenRouter / Qwen 供应商设置页新增「🔄 刷新模型列表」按钮，一键从官方 `/models` 拉取全部可用模型并合并进下拉（本地缓存 7 天），以后出新模型无需改代码发版。
+- 🧠 **测试连接成功后自动刷新**：需鉴权供应商（如 Qwen）在连接测试通过后自动拉取该 Key 可用模型；API Key 全程留在浏览器本地，不上传任何服务器。
+
+### 优化改进
+- ✨ **OpenRouter 内置清单更新至 2026-08 现役模型**：新增 Gemini 3.7 Flash / Gemini 3.1 Pro、Claude Opus 5 / Sonnet 5 / Haiku 4.5、GPT-5.6 Luna / GPT-5.5 / GPT-5.4 Mini、Qwen3.8 Max / Qwen3.7 Flash、Llama 4 Scout、DeepSeek V4 Flash 等。
+- 🛡️ **存量兼容**：更换内置清单后，用户已选但已不在新列表中的旧模型会以「（当前）xxx」保留在下拉顶部，不会被静默替换成默认模型。
+- 默认模型由 `google/gemini-2.0-flash-001` 升级为 `google/gemini-3.7-flash`（多模态含图/音/视频，1M 上下文，低成本）。
+
+### 说明
+- `bridge.js` 仅将内容脚本在配置加载前的瞬时默认模型对齐为 `google/gemini-3.7-flash`（启动后即被用户配置覆盖，AI 分析行为不变）；`background.js` / `injector.js` 未改动。
+- `manifest.json` 的 `host_permissions` 未变更，存量用户更新无需重新授权。
+
 ## [1.2.0] - 2026-04-04
 
 ### 新增功能

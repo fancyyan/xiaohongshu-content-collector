@@ -81,6 +81,10 @@
           <select id="apiModel" class="select-full" disabled>
             <!-- 模型选项会根据供应商动态更新 -->
           </select>
+          <div class="model-refresh-row" id="modelRefreshRow" style="display:none">
+            <button type="button" id="btnRefreshModels" class="btn-refresh-models">🔄 刷新模型列表</button>
+            <span id="modelRefreshStatus" class="model-refresh-status"></span>
+          </div>
         </div>
 
         <div class="setting-item-full" id="customModelContainer" style="display: none;">

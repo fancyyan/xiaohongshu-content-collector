@@ -24,7 +24,7 @@ const DEFAULT_CONFIG = {
   apiConfig: {
     provider: 'openrouter',
     apiKey: '',
-    apiModel: 'google/gemini-2.0-flash-001',
+    apiModel: 'google/gemini-3.7-flash',
     customEndpoint: '',
   },
   customPrompts: [],
@@ -35,22 +35,29 @@ const API_PROVIDERS = {
   openrouter: {
     name: 'OpenRouter',
     endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    modelsEndpoint: 'https://openrouter.ai/api/v1/models',
+    modelsFetchNeedsKey: false,
     keyPlaceholder: 'sk-or-v1-...',
     keyLink: 'https://openrouter.ai/keys',
     hint: [
       'API Key 会安全存储在本地',
       '支持多种 AI 模型，性价比高',
       '获取 API Key：<a href="https://openrouter.ai/keys" target="_blank">OpenRouter 官网</a>',
+      '💡 内置为常用模型，点「🔄 刷新模型列表」可从 OpenRouter 拉取全部可用模型（免鉴权）',
     ],
     models: [
-      { value: 'google/gemini-2.0-flash-001', label: 'Gemini 2.0 Flash（推荐）' },
-      { value: 'google/gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking' },
-      { value: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-      { value: 'anthropic/claude-3-opus', label: 'Claude 3 Opus' },
-      { value: 'openai/gpt-4o', label: 'GPT-4o' },
-      { value: 'openai/gpt-4o-mini', label: 'GPT-4o Mini（便宜）' },
-      { value: 'openai/gpt-4-turbo', label: 'GPT-4 Turbo' },
-      { value: 'meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B' },
+      { value: 'google/gemini-3.7-flash', label: 'Gemini 3.7 Flash（推荐·多模态·最新）' },
+      { value: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro（多模态·更强·预览）' },
+      { value: 'anthropic/claude-opus-5', label: 'Claude Opus 5（多模态·旗舰）' },
+      { value: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5（多模态·均衡）' },
+      { value: 'anthropic/claude-haiku-4.5', label: 'Claude Haiku 4.5（多模态·便宜）' },
+      { value: 'openai/gpt-5.6-luna', label: 'GPT-5.6 Luna（多模态·最新·限免）' },
+      { value: 'openai/gpt-5.5', label: 'GPT-5.5（多模态·均衡）' },
+      { value: 'openai/gpt-5.4-mini', label: 'GPT-5.4 Mini（多模态·便宜）' },
+      { value: 'qwen/qwen3.8-max', label: 'Qwen3.8 Max（多模态·最新）' },
+      { value: 'qwen/qwen3.7-flash', label: 'Qwen3.7 Flash（多模态·便宜）' },
+      { value: 'meta-llama/llama-4-scout', label: 'Llama 4 Scout（多模态·便宜）' },
+      { value: 'deepseek/deepseek-v4-flash', label: 'DeepSeek V4 Flash（仅文本·最新·便宜）' },
     ]
   },
   anthropic: {
@@ -120,12 +127,15 @@ const API_PROVIDERS = {
   qwen: {
     name: 'Qwen（通义千问）',
     endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    modelsEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
+    modelsFetchNeedsKey: true,
     keyPlaceholder: 'sk-...',
     keyLink: 'https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen',
     hint: [
       '阿里云通义千问 API（国内）',
       '支持多模态分析（VL系列模型）',
       '获取 API Key：<a href="https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen" target="_blank">阿里云百炼</a>',
+      '💡 填写 API Key 后点「🔄 刷新模型列表」可拉取该 Key 在百炼可用的全部模型',
     ],
     models: [
       { value: 'qwen-vl-max-latest', label: 'Qwen VL Max（多模态，推荐）' },
@@ -255,7 +265,7 @@ function updateFormSteps() {
 }
 
 // 更新供应商相关的 UI
-function updateProviderUI() {
+async function updateProviderUI(savedApiModel) {
   const provider = document.getElementById('apiProvider').value;
 
   // 如果没有选择提供方，不更新UI
@@ -284,15 +294,34 @@ function updateProviderUI() {
     apiModelContainer.style.display = 'flex';
   }
 
-  // 更新模型列表
+  // 仅对支持「刷新模型列表」的供应商（目前为 OpenRouter / Qwen）显示刷新按钮
+  const refreshRow = document.getElementById('modelRefreshRow');
+  if (refreshRow) {
+    refreshRow.style.display = providerConfig.modelsEndpoint ? 'flex' : 'none';
+  }
+
+  // 更新模型列表：内置静态清单 ∪ 缓存内上次动态拉取到的模型，按 value 去重，静态居前
   const modelSelect = document.getElementById('apiModel');
+  const merged = await buildMergedModelList(provider);
+  const preferred = savedApiModel || '';
+
   modelSelect.innerHTML = '';
-  providerConfig.models.forEach(model => {
+  // 兼容存量用户：若已选模型已不在内置/缓存清单中（更换内置清单后会发生的情形），
+  // 在顶部注入其当前选项并选中，避免被静默替换成默认模型
+  if (preferred && !merged.some(m => m.value === preferred)) {
+    const cur = document.createElement('option');
+    cur.value = preferred;
+    cur.textContent = `（当前）${preferred}`;
+    modelSelect.appendChild(cur);
+  }
+  merged.forEach(model => {
     const option = document.createElement('option');
     option.value = model.value;
     option.textContent = model.label;
     modelSelect.appendChild(option);
   });
+  // 回填选中值
+  modelSelect.value = preferred || (merged[0] && merged[0].value) || '';
 
   // 更新提示信息
   const hintList = document.getElementById('apiHintList');
@@ -300,6 +329,32 @@ function updateProviderUI() {
 
   // 更新表单步骤状态
   updateFormSteps();
+}
+
+// 模型缓存有效期（7 天）
+const MODEL_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// 读取本地缓存的动态拉取模型（过期或不存在返回 []，回落到内置清单）
+async function readModelCache(provider) {
+  try {
+    const { modelCache } = await chrome.storage.local.get('modelCache');
+    const entry = modelCache && modelCache[provider];
+    if (entry && typeof entry.fetchedAt === 'number' && (Date.now() - entry.fetchedAt) < MODEL_CACHE_TTL_MS) {
+      return Array.isArray(entry.models) ? entry.models : [];
+    }
+  } catch (_) { /* 读取失败则回落到内置清单 */ }
+  return [];
+}
+
+// 合并「内置静态清单」与「缓存动态清单」，按 value 去重
+async function buildMergedModelList(provider) {
+  const providerConfig = API_PROVIDERS[provider];
+  const merged = [];
+  const seen = new Set();
+  const push = (m) => { if (m && m.value && !seen.has(m.value)) { seen.add(m.value); merged.push(m); } };
+  (providerConfig && providerConfig.models || []).forEach(push);
+  (await readModelCache(provider)).forEach(push);
+  return merged;
 }
 
 // 加载设置
@@ -326,9 +381,9 @@ async function loadSettings() {
     // 填充 API 配置
     if (config.apiConfig) {
       document.getElementById('apiProvider').value = config.apiConfig.provider || 'openrouter';
-      updateProviderUI(); // 更新 UI
+      await updateProviderUI(config.apiConfig.apiModel); // 更新 UI（传入已存模型，兼容存量迁移）
       document.getElementById('apiKey').value = config.apiConfig.apiKey || '';
-      document.getElementById('apiModel').value = config.apiConfig.apiModel || 'google/gemini-2.0-flash-001';
+      document.getElementById('apiModel').value = config.apiConfig.apiModel || 'google/gemini-3.7-flash';
       document.getElementById('customEndpoint').value = config.apiConfig.customEndpoint || '';
       document.getElementById('customModel').value = config.apiConfig.customModel || '';
 
@@ -339,7 +394,7 @@ async function loadSettings() {
         apiTestStatus.lastTestedConfig = {
           provider: config.apiConfig.provider || 'openrouter',
           apiKey: config.apiConfig.apiKey,
-          apiModel: config.apiConfig.apiModel || 'google/gemini-2.0-flash-001',
+          apiModel: config.apiConfig.apiModel || 'google/gemini-3.7-flash',
           customEndpoint: config.apiConfig.customEndpoint || '',
           customModel: config.apiConfig.customModel || ''
         };
@@ -668,6 +723,10 @@ function bindEvents() {
   });
   document.getElementById('apiKey').addEventListener('blur', updateFormSteps);
   document.getElementById('apiModel').addEventListener('change', resetAPITestStatus);
+
+  // 「刷新模型列表」按钮（仅 OpenRouter / Qwen 显示）
+  const refreshBtn = document.getElementById('btnRefreshModels');
+  if (refreshBtn) refreshBtn.addEventListener('click', handleRefreshModels);
   document.getElementById('customEndpoint').addEventListener('input', () => {
     resetAPITestStatus();
     updateFormSteps();
@@ -713,6 +772,66 @@ function resetAPITestStatus() {
     resultDiv.style.display = 'none';
     resultDiv.textContent = '';
     resultDiv.className = '';
+  }
+}
+
+// 拉取指定供应商的最新模型列表（OpenRouter 免鉴权；Qwen 需带 Key），结果写入本地缓存
+async function fetchModelsList(provider) {
+  const providerConfig = API_PROVIDERS[provider];
+  if (!providerConfig || !providerConfig.modelsEndpoint) {
+    throw new Error('该供应商暂不支持刷新模型列表');
+  }
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (providerConfig.modelsFetchNeedsKey && !apiKey) {
+    throw new Error('请先填写并测试 API Key');
+  }
+  const headers = providerConfig.modelsFetchNeedsKey ? { 'Authorization': `Bearer ${apiKey}` } : {};
+  const resp = await fetch(providerConfig.modelsEndpoint, { method: 'GET', headers });
+  if (!resp.ok) {
+    let msg = `HTTP ${resp.status}`;
+    try { const e = await resp.json(); msg = (e && (e.error?.message || e.message)) || msg; } catch (_) {}
+    throw new Error(msg);
+  }
+  const json = await resp.json();
+  const data = Array.isArray(json) ? json : (json.data || []);
+  const models = [];
+  const seen = new Set();
+  data.forEach(item => {
+    const id = item && (item.id || item.model);
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      models.push({ value: id, label: (item && item.name) || id });
+    }
+  });
+  if (!models.length) throw new Error('返回的模型列表为空');
+  const { modelCache = {} } = await chrome.storage.local.get('modelCache');
+  modelCache[provider] = { fetchedAt: Date.now(), models };
+  await chrome.storage.local.set({ modelCache });
+  return models;
+}
+
+// 「刷新模型列表」按钮处理：拉取 -> 写缓存 -> 重渲染(保留当前已选) -> 显示结果
+async function handleRefreshModels() {
+  const provider = document.getElementById('apiProvider').value;
+  const btn = document.getElementById('btnRefreshModels');
+  const status = document.getElementById('modelRefreshStatus');
+  if (!btn || !status) return;
+  const before = document.getElementById('apiModel').value;
+  btn.disabled = true;
+  status.textContent = '⏳ 正在拉取最新模型列表...';
+  status.className = 'model-refresh-status loading';
+  try {
+    const fetched = await fetchModelsList(provider);
+    const staticIds = new Set((API_PROVIDERS[provider] && API_PROVIDERS[provider].models || []).map(m => m.value));
+    const added = fetched.filter(m => !staticIds.has(m.value)).length;
+    await updateProviderUI(before); // 重渲染，保留刚选的模型
+    status.textContent = `✅ 已刷新：共 ${fetched.length} 个可用模型（内置外新增 ${added} 个，缓存 7 天）`;
+    status.className = 'model-refresh-status success';
+  } catch (e) {
+    status.textContent = `❌ 拉取失败：${e.message}（继续使用内置清单）`;
+    status.className = 'model-refresh-status error';
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -818,6 +937,12 @@ async function testAPIConnection() {
         customEndpoint,
         customModel
       };
+
+      // 该供应商支持刷新模型列表时，趁 Key 已验证顺势自动拉取一次最新模型（失败不影响测试结果）
+      const pc = API_PROVIDERS[provider];
+      if (pc && pc.modelsEndpoint) {
+        handleRefreshModels().catch(() => {});
+      }
     } else {
       const errorData = await response.json().catch(() => ({}));
       const errorMsg = errorData.error?.message || errorData.message || `HTTP ${response.status}`;

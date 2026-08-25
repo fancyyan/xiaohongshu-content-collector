@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 
@@ -30,6 +30,7 @@
 ### 🤖 AI 多模态分析
 - **多供应商支持** - OpenRouter、Anthropic、OpenAI、Google AI、Qwen（通义千问）、DeepSeek、MiniMax、自定义端点
 - **国内API支持** - 新增Qwen、DeepSeek、MiniMax等国内AI服务商
+- **🔄 模型列表动态刷新** - OpenRouter / Qwen 支持一键从官方拉取全部最新可用模型并合并进下拉（本地缓存 7 天），随测试连接自动更新；内置模型已更新至 2026-08 现役新一代
 - **图文分析** - 同时分析文字内容和图片视觉风格
 - **🎬 视频截帧分析** - 自动截取视频多帧画面（默认6帧，可配置2-12帧），AI 逐帧分析叙事结构和画面质量
 - **多种分析模式** - 内容分析、仿写文案、爆款潜力、标签建议、视觉诊断等
@@ -74,8 +75,8 @@
 
 1. **下载安装包**
    - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.2.0.zip`
-   - 或直接下载：[xhs-collector-beta-v1.2.0.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.0/xhs-collector-beta-v1.2.0.zip)
+   - 下载最新版本的 `xhs-collector-beta-v1.2.1.zip`
+   - 或直接下载：[xhs-collector-beta-v1.2.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.1/xhs-collector-beta-v1.2.1.zip)
 
 2. **解压文件**
    - 将下载的 zip 文件解压到本地文件夹
@@ -125,7 +126,7 @@
 
 3. **配置 API**
    - 输入 API Key
-   - 选择 AI 模型（推荐：Gemini 2.0 Flash）
+   - 选择 AI 模型（推荐：Gemini 3.7 Flash，或点「🔄 刷新模型列表」拉取全部最新模型）
    - 点击"保存"
 
 ### 第二步：开始收集
@@ -299,7 +300,10 @@ A: 可以。数据收集功能不需要 API Key。只有 AI 分析功能需要�
 A: 支持多个供应商的模型：
 - **海外**：OpenRouter、Anthropic、OpenAI、Google AI
 - **国内**：Qwen（通义千问，支持多模态）、DeepSeek（仅文本）、MiniMax（仅文本）
-- 推荐使用 OpenRouter 的 Gemini 2.0 Flash（性价比最高）或 Qwen VL Max（国内访问快，支持多模态）
+- 推荐使用 OpenRouter 的 Gemini 3.7 Flash（多模态、性价比高）或 Qwen VL Max（国内访问快，支持多模态），两者均可在设置页点「🔄 刷新模型列表」拉取全部最新模型
+
+### Q: 模型下拉里的模型比较旧，怎么更新？
+A: OpenRouter 与 Qwen 供应商在设置页提供「🔄 刷新模型列表」按钮。OpenRouter 免鉴权可直接刷新；Qwen 填写并测试 API Key 后即可刷新。点击后从官方 `/models` 拉取该供应商全部可用模型并合并进下拉（本地缓存 7 天），以后出新模型无需等版本更新。
 
 ### Q: 如何导出数据？
 A: 点击插件图标，在"数据导出"部分选择格式（JSON/JSONL/Markdown/训练数据），点击对应按钮即可导出。
@@ -317,7 +321,7 @@ A: 存储在浏览器的 IndexedDB 中，路径：Chrome DevTools → Applicatio
 A: 点击插件图标，在底部点击"清空数据"按钮。注意：此操作不可撤销。
 
 ### Q: API 费用大概多少？
-A: 取决于使用的模型和图片数量。使用 Gemini 2.0 Flash + 默认图片数量，大约每 100 次分析 $0.5-1。
+A: 取决于使用的模型和图片数量。使用 Gemini 3.7 Flash 等新一代多模态模型 + 默认图片数量，成本极低，每 100 次分析通常 $0.5 以内。
 
 ---
 
