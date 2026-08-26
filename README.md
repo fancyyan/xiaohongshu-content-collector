@@ -5,6 +5,9 @@
 ![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
+![GitHub stars](https://img.shields.io/github/stars/fancyyan/xiaohongshu-content-collector?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/fancyyan/xiaohongshu-content-collector)
+![Made with Vibe Coding](https://img.shields.io/badge/made%20with-Vibe%20Coding-ff69b4)
 
 一个智能的小红书内容收集和分析工具，支持自动采集、AI 多模态分析、数据导出等功能。
 
@@ -13,6 +16,11 @@
 [English Documentation](README_EN.md)
 
 </div>
+
+## 🎬 演示
+
+> 📺 浏览小红书 → 自动采集 → 一键多模态 AI 爆款拆解 → 多格式导出(全程本地存储,数据零外传)
+<!-- 录制 15s 屏存为 docs/screenshots/demo.gif 后,可把这行下方加:<p align="center"><img src="docs/screenshots/demo.gif" width="640"></p> -->
 
 ---
 ## ⚠️ 免责声明
@@ -68,6 +76,21 @@
 - **帮助支持** - 内置使用教程、问题反馈、GitHub链接
 
 ---
+
+## 🧠 支持的 AI 模型(2026-08 现役,内置清单可一键刷新)
+
+内置精选常用模型;设置页点「🔄 刷新模型列表」即可从官方 `/models` 拉取该供应商**全部可用模型**(本地缓存 7 天),出新模型无需等发版。
+
+**OpenRouter 内置(均为多模态,除标注外)**
+- Google Gemini 3.7 Flash(默认)、Gemini 3.1 Pro
+- Anthropic Claude Opus 5、Sonnet 5、Haiku 4.5
+- OpenAI GPT-5.6 Luna、GPT-5.5、GPT-5.4 Mini
+- Qwen3.8 Max、Qwen3.7 Flash、Llama 4 Scout、DeepSeek V4 Flash(仅文本)
+
+**Qwen(通义千问 / 百炼)**
+- Qwen VL Max / VL Plus(多模态)、Qwen Max / Plus / Turbo(文本);填 API Key 后点刷新可拉取百炼全部最新模型。
+
+**其它供应商**:Anthropic(Claude 官方)、OpenAI、Google AI、DeepSeek、MiniMax、自定义 OpenAI 兼容端点。
 
 ## 🚀 安装指南
 
@@ -339,18 +362,16 @@ A: 取决于使用的模型和图片数量。使用 Gemini 3.7 Flash 等新一�
 xhs-collector/
 ├── manifest.json          # 扩展配置文件
 ├── background.js          # Service Worker
-├── injector.js           # API 拦截脚本（MAIN world）
-├── bridge.js             # 桥接脚本（ISOLATED world）
-├── ai-panel.css          # AI 面板样式
-├── popup/                # Popup 界面
-│   ├── popup.html
-│   ├── popup.css
-│   ├── popup.js
-│   ├── settings.html     # 设置页面
-│   ├── settings.css
-│   └── settings.js
-├── icons/                # 图标资源
-└── docs/                 # 文档
+├── injector.js            # API 拦截脚本（MAIN world）
+├── bridge.js              # 桥接脚本（ISOLATED world）
+├── ai-panel.css           # AI 面板样式
+├── onboarding.html / .js  # 首次使用引导页
+├── lib/storage.js         # IndexedDB 封装
+├── popup/                 # Popup 与设置界面
+│   ├── popup.html / .css / .js
+│   └── settings.html / .css / .js
+├── icons/                 # 图标资源
+└── package.sh             # 打包脚本
 ```
 
 ---

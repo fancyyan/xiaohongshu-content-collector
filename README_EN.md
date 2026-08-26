@@ -5,6 +5,9 @@
 ![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
+![GitHub stars](https://img.shields.io/github/stars/fancyyan/xiaohongshu-content-collector?style=flat)
+![Last Commit](https://img.shields.io/github/last-commit/fancyyan/xiaohongshu-content-collector)
+![Made with Vibe Coding](https://img.shields.io/badge/made%20with-Vibe%20Coding-ff69b4)
 
 An intelligent Xiaohongshu (Little Red Book) content collection and analysis tool with automatic data collection, AI multimodal analysis, and data export capabilities.
 
@@ -13,6 +16,11 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 [中文文档](README.md)
 
 </div>
+
+## 🎬 Demo
+
+> 📺 Browse Xiaohongshu → auto-collect → one-click multimodal AI viral breakdown → multi-format export (fully local, nothing uploaded)
+<!-- After recording a 15s gif to docs/screenshots/demo.gif, you may add below this line: <p align="center"><img src="docs/screenshots/demo.gif" width="640"></p> -->
 
 ---
 
@@ -65,6 +73,21 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **Help & Support** - Built-in tutorials, issue reporting, GitHub links
 
 ---
+
+## 🧠 Supported AI Models (2026-08 current; built-in list refreshable with one click)
+
+Built-in curated models; in settings click "🔄 Refresh Model List" to fetch **all available models** from the provider's official `/models` endpoint (cached locally for 7 days) — new models need no new release.
+
+**OpenRouter built-in (all multimodal unless noted)**
+- Google Gemini 3.7 Flash (default), Gemini 3.1 Pro
+- Anthropic Claude Opus 5, Sonnet 5, Haiku 4.5
+- OpenAI GPT-5.6 Luna, GPT-5.5, GPT-5.4 Mini
+- Qwen3.8 Max, Qwen3.7 Flash, Llama 4 Scout, DeepSeek V4 Flash (text only)
+
+**Qwen (Tongyi Qianwen / DashScope)**
+- Qwen VL Max / VL Plus (multimodal), Qwen Max / Plus / Turbo (text); after entering your API Key, click refresh to fetch all latest models from DashScope.
+
+**Other providers**: Anthropic (Claude official), OpenAI, Google AI, DeepSeek, MiniMax, custom OpenAI-compatible endpoints.
 
 ## 🚀 Installation
 
@@ -333,18 +356,16 @@ A: Depends on the model used and number of images. Using Gemini 3.7 Flash (or si
 xhs-collector/
 ├── manifest.json          # Extension configuration
 ├── background.js          # Service Worker
-├── injector.js           # API interception script (MAIN world)
-├── bridge.js             # Bridge script (ISOLATED world)
-├── ai-panel.css          # AI panel styles
-├── popup/                # Popup interface
-│   ├── popup.html
-│   ├── popup.css
-│   ├── popup.js
-│   ├── settings.html     # Settings page
-│   ├── settings.css
-│   └── settings.js
-├── icons/                # Icon resources
-└── docs/                 # Documentation
+├── injector.js            # API interception script (MAIN world)
+├── bridge.js              # Bridge script (ISOLATED world)
+├── ai-panel.css           # AI panel styles
+├── onboarding.html / .js  # First-run onboarding page
+├── lib/storage.js         # IndexedDB wrapper
+├── popup/                 # Popup & settings UI
+│   ├── popup.html / .css / .js
+│   └── settings.html / .css / .js
+├── icons/                 # Icon resources
+└── package.sh             # Packaging script
 ```
 
 ---
