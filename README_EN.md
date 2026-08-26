@@ -20,7 +20,8 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 ## 🎬 Demo
 
 > 📺 Browse Xiaohongshu → auto-collect → one-click multimodal AI viral breakdown → multi-format export (fully local, nothing uploaded)
-<!-- After recording a 15s gif to docs/screenshots/demo.gif, you may add below this line: <p align="center"><img src="docs/screenshots/demo.gif" width="640"></p> -->
+
+<p align="center"><img src="docs/screenshots/demo.gif" alt="Demo: browse Xiaohongshu → auto-collect → AI viral breakdown → export" width="600"></p>
 
 ---
 

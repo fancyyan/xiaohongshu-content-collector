@@ -20,7 +20,8 @@
 ## 🎬 演示
 
 > 📺 浏览小红书 → 自动采集 → 一键多模态 AI 爆款拆解 → 多格式导出(全程本地存储,数据零外传)
-<!-- 录制 15s 屏存为 docs/screenshots/demo.gif 后,可把这行下方加:<p align="center"><img src="docs/screenshots/demo.gif" width="640"></p> -->
+
+<p align="center"><img src="docs/screenshots/demo.gif" alt="演示:浏览小红书 → 自动采集 → AI 爆款拆解 → 导出" width="600"></p>
 
 ---
 ## ⚠️ 免责声明
