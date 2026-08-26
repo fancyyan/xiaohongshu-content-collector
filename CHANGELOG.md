@@ -2,6 +2,21 @@
 
 所有重要的项目变更都会记录在此文件中。
 
+## [1.3.0] - 2026-08-26
+
+### 新增功能
+- 🔌 **MCP 接口**：把本地采集的小红书语料通过 MCP 暴露给 Claude Desktop / Cursor / Cline，让 AI agent 能检索、统计并用插件自带的「爆款拆解 / 仿写 / 标签 / 选题 / 博主画像」视角分析你的笔记。
+  - `mcp/server.mjs`：零依赖 Node stdio MCP server（JSON-RPC 2.0，无需 `npm install`）。
+  - 6 个数据工具：`search_notes / get_note / list_creators / stats / trending_tags / recent_notes`；资源 `xhs-note://{noteId}`、`xhs-corpus://stats`；5 个分析 prompt 模板（复刻插件的分析视角）。
+  - 输入 = 插件现有「导出 > JSON」语料；每次工具调用重读文件，**重新导出即生效、无需重启**。
+  - **本地优先**：语料不出本机，API Key 不进文件；推理由宿主模型完成。
+- `mcp/README.md`（开发文档：协议 / schema / 调试）与 `mcp/sample-corpus.json`（免导出即可跑通）。
+- README / README_EN 新增「🔌 MCP 集成」接入段与示例提问。
+
+### 说明
+- 扩展运行时二进制与 v1.2.1 功能等同（MCP server 在 `mcp/` 独立，**未改动** `lib / background / popup / bridge / injector`）。
+- 仓库新增 `mcp` topic，便于被 MCP 生态检索发现。
+
 ## [1.2.1] - 2026-08-25
 
 ### 新增功能

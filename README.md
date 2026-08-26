@@ -76,6 +76,9 @@
 - **实时生效** - 配置修改后立即生效
 - **帮助支持** - 内置使用教程、问题反馈、GitHub链接
 
+### 🔌 生态集成（MCP）
+- **MCP 接口** - 本地语料一键暴露成 MCP server，让 Claude / Cursor / Cline 直接检索、统计，并用「爆款拆解 / 仿写 / 标签 / 选题 / 博主画像」视角分析你的笔记（详见下文 🔌 MCP 集成）
+
 ---
 
 ## 🧠 支持的 AI 模型(2026-08 现役,内置清单可一键刷新)
@@ -302,6 +305,39 @@
 - 间隔：2500ms
 
 ---
+
+## 🔌 MCP 集成（让 Claude / Cursor 查你的小红书语料）
+
+把你在插件里本地采集的小红书语料，通过 [MCP](https://modelcontextprotocol.io) 暴露给 AI agent，让 Claude Desktop / Cursor / Cline 能检索、统计，并用插件自带的「爆款拆解 / 仿写 / 标签 / 选题 / 博主画像」视角分析你的笔记。**语料仅限你本机已采集的公开笔记，API Key 不会进文件。**
+
+> 零依赖：仅 Node 内置模块，无需 `npm install`。仓库 `mcp/` 下提供 server、样本语料与开发文档。
+
+### 三步接入
+
+1. **导出语料**：在插件 Popup「数据导出」选 **JSON**，存到本地（如 `~/xhs-corpus.json`）。
+2. **配置客户端**（把 `<REPO>` 换成本仓库克隆路径，`<CORPUS>` 换成上一步路径）：
+
+   **Claude Desktop**（`~/Library/Application Support/Claude/claude_desktop_config.json`）：
+   ```json
+   {
+     "mcpServers": {
+       "xhs": {
+         "command": "node",
+         "args": ["<REPO>/mcp/server.mjs", "--corpus", "<CORPUS>"]
+       }
+     }
+   }
+   ```
+   **Cursor**（`.cursor/mcp.json`）、**Cline**（`cline_mcp_settings.json`）：同样的 `mcpServers` 结构。
+
+3. **直接问你的 AI**：
+   - 「用 `search_notes` 找 3 条讲防晒的小红书笔记，再用「爆款拆解」各拆一遍」
+   - 「我库里互动最高的博主是谁？给它做博主画像」
+   - 「本周采集的笔记最常出现的标签有哪些？」
+
+> 每次工具调用都会重读语料文件——**重新导出后无需重启**，agent 立刻看到新数据。
+
+完整工具 / 资源 / prompt 清单与本地调试见 [`mcp/README.md`](mcp/README.md)。
 
 ## ❓ 常见问题
 

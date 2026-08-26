@@ -73,6 +73,9 @@ An intelligent Xiaohongshu (Little Red Book) content collection and analysis too
 - **Real-time Effect** - Configuration changes take effect immediately
 - **Help & Support** - Built-in tutorials, issue reporting, GitHub links
 
+### 🔌 Integrations (MCP)
+- **MCP Interface** - Expose your local Xiaohongshu corpus as an MCP server so Claude / Cursor / Cline can search, aggregate, and analyze your notes with the plugin's viral-breakdown / copywriting / tags / topic / creator lenses (see 🔌 MCP Integration below)
+
 ---
 
 ## 🧠 Supported AI Models (2026-08 current; built-in list refreshable with one click)
@@ -299,6 +302,39 @@ If you have your own API service:
 - Interval: 2500ms
 
 ---
+
+## 🔌 MCP Integration (Query your Xiaohongshu corpus from Claude / Cursor)
+
+Expose the Xiaohongshu notes you've collected locally to AI agents via [MCP](https://modelcontextprotocol.io), so Claude Desktop / Cursor / Cline can search, aggregate, and analyze your notes with the plugin's "viral breakdown / copywriting / tags / topic / creator profile" lenses. **The corpus is limited to the public notes collected on your own machine; your API key is never written to the file.**
+
+> Zero dependencies: Node built-ins only, no `npm install`. The `mcp/` folder ships the server, a sample corpus, and dev docs.
+
+### 3-step setup
+
+1. **Export the corpus**: in the extension Popup, choose **Data Export → JSON** and save to a local path (e.g. `~/xhs-corpus.json`).
+2. **Configure your client** (replace `<REPO>` with this repo's path and `<CORPUS>` with the path above):
+
+   **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+   ```json
+   {
+     "mcpServers": {
+       "xhs": {
+         "command": "node",
+         "args": ["<REPO>/mcp/server.mjs", "--corpus", "<CORPUS>"]
+       }
+     }
+   }
+   ```
+   **Cursor** (`.cursor/mcp.json`) and **Cline** (`cline_mcp_settings.json`): the same `mcpServers` shape.
+
+3. **Ask your AI**:
+   - "Use `search_notes` to find 3 Xiaohongshu posts about sunscreen, then run the viral-breakdown lens on each."
+   - "Who is the top creator in my corpus? Build a creator profile."
+   - "What are the most frequent tags among notes I captured this week?"
+
+> Each tool call re-reads the corpus file — re-export and the agent sees fresh data with no restart.
+
+For the full tools / resources / prompts list and local debugging, see [`mcp/README.md`](mcp/README.md).
 
 ## ❓ FAQ
 
