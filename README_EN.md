@@ -224,6 +224,10 @@ xiaohongshu-content-collector/
 
 **How do I refresh the local corpus?**  Export to the same JSON file again. The MCP server reloads it on every call.
 
+## Acknowledgments
+
+Special thanks to [jackwener](https://github.com/jackwener) for creating and maintaining [`xiaohongshu-cli`](https://github.com/jackwener/xiaohongshu-cli). The live, read-only MCP Bridge in XHS Collector `v1.4.0` is built on the CLI capabilities provided by that project.
+
 ## Contributing
 
 Use [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) for bugs and suggestions, or fork the project and open a pull request. Run the MCP tests before submitting and verify that your changes contain no credentials or personal corpus data.

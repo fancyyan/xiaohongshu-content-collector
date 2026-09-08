@@ -224,6 +224,10 @@ xiaohongshu-content-collector/
 
 **如何更新本地语料？**  重新从插件导出到同一个 JSON 文件即可，MCP 每次调用都会重新读取。
 
+## 致谢
+
+特别感谢 [jackwener](https://github.com/jackwener) 开源并维护 [`xiaohongshu-cli`](https://github.com/jackwener/xiaohongshu-cli)。XHS Collector `v1.4.0` 的实时只读 MCP Bridge 建立在该项目提供的 CLI 能力之上。
+
 ## 贡献
 
 欢迎通过 [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) 报告问题或提出建议，也欢迎 Fork 后提交 Pull Request。提交前请运行 MCP 测试，并确认改动中不包含账号凭证和个人语料。
