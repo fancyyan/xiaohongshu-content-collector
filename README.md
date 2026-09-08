@@ -1,460 +1,240 @@
-# 小红书内容收集器 (XHS Collector)
+# 小红书内容收集器（XHS Collector）
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
+![Extension](https://img.shields.io/badge/Chrome_Extension-1.3.0-4285F4.svg)
+![MCP](https://img.shields.io/badge/MCP_Server-1.4.0-7C3AED.svg)
+![Node](https://img.shields.io/badge/Node.js-18%2B-339933.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 ![GitHub stars](https://img.shields.io/github/stars/fancyyan/xiaohongshu-content-collector?style=flat)
-![Last Commit](https://img.shields.io/github/last-commit/fancyyan/xiaohongshu-content-collector)
-![Made with Vibe Coding](https://img.shields.io/badge/made%20with-Vibe%20Coding-ff69b4)
 
-一个智能的小红书内容收集和分析工具，支持自动采集、AI 多模态分析、数据导出等功能。
+本地优先的小红书内容采集、AI 分析与 MCP 工具箱。
 
-[功能特性](#功能特性) • [安装指南](#安装指南) • [快速开始](#快速开始) • [使用文档](#使用文档) • [常见问题](#常见问题)
+浏览器插件负责被动采集和多模态分析，MCP server 可检索本地语料，并通过 `xiaohongshu-cli` 进行实时只读搜索、详情、评论和热门内容读取。
 
-[English Documentation](README_EN.md)
+[English](README_EN.md) · [安装](#安装) · [MCP + CLI Bridge](#mcp--cli-bridge) · [更新日志](CHANGELOG.md) · [问题反馈](https://github.com/fancyyan/xiaohongshu-content-collector/issues)
 
 </div>
 
-## 🎬 演示
+> [!IMPORTANT]
+> 本项目仅用于个人学习、研究和内容管理。请遵守小红书服务条款、当地法律与合理的访问频率。账号限制、验证码或其他平台风控风险由使用者自行承担。
 
-> 📺 浏览小红书 → 自动采集 → 一键多模态 AI 爆款拆解 → 多格式导出(全程本地存储,数据零外传)
+## v1.4.0 新增
 
-<p align="center"><img src="docs/screenshots/demo.gif" alt="演示:浏览小红书 → 自动采集 → AI 爆款拆解 → 导出" width="600"></p>
+- 将本机 [`xiaohongshu-cli`](https://github.com/jackwener/xiaohongshu-cli) 接入现有 MCP server。
+- 新增 `xhs_status`、`xhs_search`、`xhs_read`、`xhs_comments`、`xhs_hot` 5 个实时只读工具。
+- 将 CLI 结果归一化为插件语料字段，可与本地导出的历史笔记一起分析。
+- CLI 调用强制串行、禁用 shell、限制输出大小，并移除 Cookie、`xsec_token` 等认证信息。
+- 新增 7 个零依赖集成测试，覆盖字段映射、异常语料、CLI 缺失和敏感信息脱敏。
 
----
-## ⚠️ 免责声明
+本次发布只更新独立 MCP server；Chrome 扩展运行时仍为 `v1.3.0`。
 
-#### 本插件仅用于AI vibe coding 私人学习，切勿滥用，如果被小红书风控封号，不负赔偿责任！！！！酌情使用！！！！
+## 它能做什么
 
-## ✨ 功能特性
+| 工作流 | 数据来源 | 适合场景 | 网络行为 |
+|---|---|---|---|
+| Chrome 扩展 | 你在浏览器中正常看到的公开笔记 | 被动采集、批量整理、图文/视频 AI 分析、导出 | 采集数据保存在本地；启用 AI 时会请求你配置的模型服务商 |
+| 本地语料 MCP | 插件导出的 JSON | 检索、统计、趋势标签、博主画像、爆款拆解 | 不访问小红书 |
+| CLI Bridge | 本机 `xiaohongshu-cli` | 实时搜索、读详情、一页评论、分类热门 | 使用 CLI 的本地登录态访问小红书 |
 
-### 📊 智能数据采集
-- **被动拦截采集** - 自动拦截小红书 API 请求，无需主动爬取
-- **多场景支持** - 支持推荐流、搜索、详情页、用户主页
-- **DOM 补充扫描** - 结合 DOM 扫描，确保数据完整性
-- **去重存储** - 自动去重，避免重复收集
+```mermaid
+flowchart LR
+  XHS[小红书网页] --> EXT[Chrome 扩展]
+  EXT --> DB[(IndexedDB)]
+  DB --> JSON[导出 JSON]
+  JSON --> MCP[MCP Server]
+  CLI[xiaohongshu-cli] --> MCP
+  MCP --> AGENT[Claude / Cursor / Cline]
+  EXT --> AI[可选 AI 服务商]
+```
 
-### 🤖 AI 多模态分析
-- **多供应商支持** - OpenRouter、Anthropic、OpenAI、Google AI、Qwen（通义千问）、DeepSeek、MiniMax、自定义端点
-- **国内API支持** - 新增Qwen、DeepSeek、MiniMax等国内AI服务商
-- **🔄 模型列表动态刷新** - OpenRouter / Qwen 支持一键从官方拉取全部最新可用模型并合并进下拉（本地缓存 7 天），随测试连接自动更新；内置模型已更新至 2026-08 现役新一代
-- **图文分析** - 同时分析文字内容和图片视觉风格
-- **🎬 视频截帧分析** - 自动截取视频多帧画面（默认6帧，可配置2-12帧），AI 逐帧分析叙事结构和画面质量
-- **多种分析模式** - 内容分析、仿写文案、爆款潜力、标签建议、视觉诊断等
-- **视频专属分析** - 完播率诊断、仿拍脚本生成、爆款对标分析
-- **批量分析** - 选择多条帖子一键批量 AI 分析，支持内容分析、爆款识别、标签分析
-- **自动分析** - 自动浏览结束后自动触发 AI 分析，无需手动操作
-- **分析历史** - 所有 AI 分析结果自动保存，支持查看、复制、删除
-- **自定义 Prompt** - 在设置中添加自定义分析模板，支持批量分析选择自定义 Prompt
-- **实时分析** - 在浏览器中直接进行 AI 分析
+## 主要功能
 
-### 🛡️ 智能风控规避
-- **频率控制** - 滑动时间窗口统计，智能限流
-- **行为模拟** - 模拟真实用户行为（随机滚动、暂停、疲劳效应）
-- **可配置参数** - 灵活调整频率限制和行为参数
+- 被动拦截推荐流、搜索、详情页和用户主页数据，并通过 DOM 扫描补全。
+- 本地 IndexedDB 去重存储，支持 JSON、JSONL、Markdown 和训练数据导出。
+- 支持图文分析、视频多帧分析、爆款潜力、仿写、标签、选题和博主画像。
+- 支持 OpenRouter、Anthropic、OpenAI、Google AI、Qwen、DeepSeek、MiniMax 和 OpenAI 兼容端点。
+- 支持自动浏览、访问频率控制、随机停顿和可配置预设。
+- MCP 提供 6 个本地语料工具、5 个实时 CLI 工具、资源和分析 Prompt。
 
-### 📤 多格式导出
-- **JSON** - 完整的结构化数据
-- **JSONL** - 逐行格式，便于处理
-- **Markdown** - 可读性强的文档格式
-- **训练数据** - 适合 AI 模型微调的格式
+## 演示
 
-### 💾 存储容量管理
-- **容量监控** - 实时显示存储使用量和容量百分比
-- **容量预警** - 接近上限（80%）和达到上限时自动提示
-- **多种清理方式** - 按时间、按导出状态、按数量灵活清理数据
-- **导出标记** - 导出后自动标记，支持清理已导出数据
+> 浏览小红书 → 自动采集 → 多模态 AI 分析 → 多格式导出
 
-### ⚙️ 可视化配置
-- **设置界面** - 完整的可视化设置页面
-- **分步引导** - 清晰的步骤标识，引导用户完成配置
-- **API分类** - 推荐（海外）、国内、自定义三大分类
-- **快速预设** - 保守安全、均衡模式、快速采集、无限图片
-- **智能校验** - 只在API配置改变时要求测试，优化用户体验
-- **实时生效** - 配置修改后立即生效
-- **帮助支持** - 内置使用教程、问题反馈、GitHub链接
+<p align="center"><img src="docs/screenshots/demo.gif" alt="小红书内容收集器演示" width="680"></p>
 
-### 🔌 生态集成（MCP）
-- **MCP 接口** - 本地语料一键暴露成 MCP server，让 Claude / Cursor / Cline 直接检索、统计，并用「爆款拆解 / 仿写 / 标签 / 选题 / 博主画像」视角分析你的笔记（详见下文 🔌 MCP 集成）
+## 安装
 
----
+### Chrome 扩展
 
-## 🧠 支持的 AI 模型(2026-08 现役,内置清单可一键刷新)
+1. 从 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 下载源码包，或克隆仓库：
 
-内置精选常用模型;设置页点「🔄 刷新模型列表」即可从官方 `/models` 拉取该供应商**全部可用模型**(本地缓存 7 天),出新模型无需等发版。
-
-**OpenRouter 内置(均为多模态,除标注外)**
-- Google Gemini 3.7 Flash(默认)、Gemini 3.1 Pro
-- Anthropic Claude Opus 5、Sonnet 5、Haiku 4.5
-- OpenAI GPT-5.6 Luna、GPT-5.5、GPT-5.4 Mini
-- Qwen3.8 Max、Qwen3.7 Flash、Llama 4 Scout、DeepSeek V4 Flash(仅文本)
-
-**Qwen(通义千问 / 百炼)**
-- Qwen VL Max / VL Plus(多模态)、Qwen Max / Plus / Turbo(文本);填 API Key 后点刷新可拉取百炼全部最新模型。
-
-**其它供应商**:Anthropic(Claude 官方)、OpenAI、Google AI、DeepSeek、MiniMax、自定义 OpenAI 兼容端点。
-
-## 🚀 安装指南
-
-### 方法 1：从 Release 安装（推荐）
-
-1. **下载安装包**
-   - 前往 [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) 页面
-   - 下载最新版本的 `xhs-collector-beta-v1.2.1.zip`
-   - 或直接下载：[xhs-collector-beta-v1.2.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.1/xhs-collector-beta-v1.2.1.zip)
-
-2. **解压文件**
-   - 将下载的 zip 文件解压到本地文件夹
-
-3. **加载到 Chrome**
-   - 打开 Chrome 浏览器
-   - 访问 `chrome://extensions/`
-   - 开启右上角的"开发者模式"
-   - 点击"加载已解压的扩展程序"
-   - 选择解压后的文件夹
-
-4. **验证安装**
-   - 在扩展列表中看到"小红书内容收集器 (公测版)"
-   - 图标显示在浏览器工具栏
-
-### 方法 2：从源码安装
-
-1. **克隆项目**
    ```bash
    git clone https://github.com/fancyyan/xiaohongshu-content-collector.git
    cd xiaohongshu-content-collector
    ```
 
-2. **加载到 Chrome**
-   - 按照方法 1 的步骤 3-4 加载到 Chrome
+2. 打开 `chrome://extensions/`。
+3. 开启右上角“开发者模式”。
+4. 点击“加载已解压的扩展程序”，选择包含 `manifest.json` 的项目目录。
 
----
+### MCP server
 
-## 🎯 快速开始
+要求：Node.js 18 或更高版本。server 只使用 Node 内置模块，无需 `npm install`。
 
-### 第一步：配置 API（可选）
+先确认可运行：
 
-如果你想使用 AI 分析功能，需要配置 API：
-
-1. **打开设置页面**
-   - 点击浏览器工具栏的插件图标
-   - 点击右上角的 **⚙️ 设置** 按钮
-
-2. **选择 API 供应商**
-   - **推荐（海外）**：OpenRouter（支持多模型）、Anthropic、OpenAI、Google AI
-   - **国内**：Qwen 通义千问（支持多模态）、DeepSeek（仅文本）、MiniMax（仅文本）
-   - **自定义**：自定义 API 端点
-   - 推荐使用 **OpenRouter**（支持多种模型，性价比高）或 **Qwen**（国内访问快）
-   - 获取 API Key：
-     - OpenRouter: https://openrouter.ai/keys
-     - Qwen: https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen
-
-3. **配置 API**
-   - 输入 API Key
-   - 选择 AI 模型（推荐：Gemini 3.7 Flash，或点「🔄 刷新模型列表」拉取全部最新模型）
-   - 点击"保存"
-
-### 第二步：开始收集
-
-1. **访问小红书**
-   - 打开 https://www.xiaohongshu.com/
-   - 正常浏览内容
-
-2. **自动收集**
-   - 插件会自动拦截并收集浏览过的内容
-   - 无需任何操作，被动收集
-
-3. **查看统计**
-   - 点击插件图标查看收集统计
-   - 查看已收集的帖子数量
-
-### 第三步：使用 AI 分析（可选）
-
-1. **打开 AI 面板**
-   - 在小红书页面，点击右下角的 AI 分析按钮
-   - 🤖（详情页）、📈（信息流）、👤（博主主页）
-
-2. **选择分析类型**
-   - 内容分析、仿写文案、爆款潜力等
-   - 点击对应按钮开始分析
-
-3. **查看结果**
-   - AI 会分析文字和图片内容
-   - 结果可以复制或保存为文件
-
-### 第四步：导出数据
-
-1. **打开 Popup**
-   - 点击插件图标
-
-2. **选择导出格式**
-   - JSON、JSONL、Markdown、训练数据
-   - 点击对应按钮导出
-
-3. **保存文件**
-   - 选择保存位置
-   - 文件会自动下载
-
----
-
-## 📖 使用文档
-
-### 自动浏览功能
-
-**功能说明：**
-自动滚动页面，模拟真实用户浏览行为，自动收集内容。
-
-**使用方法：**
-1. 打开插件 Popup
-2. 选择滚动速度（慢速/正常/快速）
-3. 设置最大滚动次数
-4. 点击"开始自动浏览"
-
-**注意事项：**
-- 建议使用"正常"或"慢速"模式
-- 不要设置过大的滚动次数
-- 可以随时点击"停止"按钮
-
-### AI 分析功能
-
-**支持的分析类型：**
-
-**详情页分析（图文）：**
-- 📊 内容分析 - 分析主题、风格、受众等
-- ✍️ 仿写文案 - 模仿风格写新文案
-- 🔥 爆款潜力 - 评估爆款可能性
-- 🏷️ 标签建议 - 推荐精准标签
-- 🎨 视觉诊断 - 分析图片风格和构图
-
-**视频笔记分析（v1.2.0 新增）：**
-- 🎬 视频分析 - 场景描述、拍摄风格、叙事结构
-- 🔥 完播率诊断 - 开头钩子、节奏分析、跳出风险点
-- ✍️ 仿拍脚本 - 分镜脚本、拍摄建议、可复用模板
-- 🏷️ 标签建议 - 基于视频画面推荐精准话题标签
-- 📊 爆款对标 - 封面帧选择建议、与爆款差距分析
-
-**信息流分析：**
-- 📈 趋势洞察 - 分析热门主题和趋势
-- 🎯 选题推荐 - 推荐有潜力的选题
-- 🏆 爆文拆解 - 拆解高互动帖子
-- 📊 数据报告 - 生成数据分析报告
-
-**博主主页分析：**
-- 👤 博主画像 - 分析定位和风格
-- 📐 运营策略 - 分析运营方法
-- 🔥 爆款复盘 - 总结爆款规律
-- 🎯 对标建议 - 推荐对标方向
-
-### 配置说明
-
-**图片数量限制：**
-- 详情页：默认 6 张（建议 3-15）
-- 信息流：默认 8 张（建议 5-20）
-- 博主主页：默认 8 张（建议 5-30）
-- 设置为 0 表示无限制
-
-**视频截帧数量（v1.2.0 新增）：**
-- 默认 6 帧，范围 2-12 帧
-- 帧数越多分析越细致，但消耗 Token 更多
-
-**频率控制：**
-- 每分钟最大请求数：默认 25（建议 15-35）
-- 5分钟最大请求数：默认 80（建议 50-120）
-- 最小请求间隔：默认 2500ms（建议 2000-4000）
-
-**滚动行为：**
-- 向上滚动概率：默认 10%（建议 5-20%）
-- 长暂停概率：默认 15%（建议 10-30%）
-- 疲劳阈值：默认 50/100 次
-
----
-
-## 🔧 高级功能
-
-### 自定义 API 端点
-
-如果你有自己的 API 服务：
-
-1. 在设置页面选择"自定义"供应商
-2. 输入 API 端点 URL
-3. 输入 API Key
-4. 确保 API 兼容 OpenAI 格式
-
-### 快速预设
-
-**保守安全（推荐新手）：**
-- 图片：6/8/8 张
-- 频率：20次/分钟，60次/5分钟
-- 间隔：3000ms
-
-**均衡模式（默认）：**
-- 图片：6/8/8 张
-- 频率：25次/分钟，80次/5分钟
-- 间隔：2500ms
-
-**快速采集（有风险）：**
-- 图片：10/15/15 张
-- 频率：35次/分钟，100次/5分钟
-- 间隔：2000ms
-
-**无限图片：**
-- 图片：无限制
-- 频率：25次/分钟，80次/5分钟
-- 间隔：2500ms
-
----
-
-## 🔌 MCP 集成（让 Claude / Cursor 查你的小红书语料）
-
-把你在插件里本地采集的小红书语料，通过 [MCP](https://modelcontextprotocol.io) 暴露给 AI agent，让 Claude Desktop / Cursor / Cline 能检索、统计，并用插件自带的「爆款拆解 / 仿写 / 标签 / 选题 / 博主画像」视角分析你的笔记。**语料仅限你本机已采集的公开笔记，API Key 不会进文件。**
-
-> 零依赖：仅 Node 内置模块，无需 `npm install`。仓库 `mcp/` 下提供 server、样本语料与开发文档。
-
-### 三步接入
-
-1. **导出语料**：在插件 Popup「数据导出」选 **JSON**，存到本地（如 `~/xhs-corpus.json`）。
-2. **配置客户端**（把 `<REPO>` 换成本仓库克隆路径，`<CORPUS>` 换成上一步路径）：
-
-   **Claude Desktop**（`~/Library/Application Support/Claude/claude_desktop_config.json`）：
-   ```json
-   {
-     "mcpServers": {
-       "xhs": {
-         "command": "node",
-         "args": ["<REPO>/mcp/server.mjs", "--corpus", "<CORPUS>"]
-       }
-     }
-   }
-   ```
-   **Cursor**（`.cursor/mcp.json`）、**Cline**（`cline_mcp_settings.json`）：同样的 `mcpServers` 结构。
-
-3. **直接问你的 AI**：
-   - 「用 `search_notes` 找 3 条讲防晒的小红书笔记，再用「爆款拆解」各拆一遍」
-   - 「我库里互动最高的博主是谁？给它做博主画像」
-   - 「本周采集的笔记最常出现的标签有哪些？」
-
-> 每次工具调用都会重读语料文件——**重新导出后无需重启**，agent 立刻看到新数据。
-
-完整工具 / 资源 / prompt 清单与本地调试见 [`mcp/README.md`](mcp/README.md)。
-
-## ❓ 常见问题
-
-### Q: 插件安全吗？会不会泄露数据？
-A: 完全安全。所有数据都存储在本地浏览器的 IndexedDB 中，不会上传到任何服务器。API Key 也是加密存储在本地。
-
-### Q: 视频分析会上传原始视频吗？
-A: 不会。截帧在浏览器本地通过 `<canvas>` 完成，只将截取的 JPEG 图片发给 AI 分析，原始视频文件完全不上传。
-
-### Q: 视频截帧数量设置多少合适？
-A: 默认 6 帧适合大多数视频。想省 Token 可以设 2-4 帧；视频较长、想分析节奏细节可以设 8-12 帧。
-
-### Q: 会不会被小红书封号？
-A: 插件采用被动拦截方式，模拟真实用户行为，并有智能频率控制。正常使用不会触发风控。建议使用保守配置。
-
-### Q: 不配置 API Key 可以使用吗？
-A: 可以。数据收集功能不需要 API Key。只有 AI 分析功能需要配置 API。
-
-### Q: 支持哪些 AI 模型？
-A: 支持多个供应商的模型：
-- **海外**：OpenRouter、Anthropic、OpenAI、Google AI
-- **国内**：Qwen（通义千问，支持多模态）、DeepSeek（仅文本）、MiniMax（仅文本）
-- 推荐使用 OpenRouter 的 Gemini 3.7 Flash（多模态、性价比高）或 Qwen VL Max（国内访问快，支持多模态），两者均可在设置页点「🔄 刷新模型列表」拉取全部最新模型
-
-### Q: 模型下拉里的模型比较旧，怎么更新？
-A: OpenRouter 与 Qwen 供应商在设置页提供「🔄 刷新模型列表」按钮。OpenRouter 免鉴权可直接刷新；Qwen 填写并测试 API Key 后即可刷新。点击后从官方 `/models` 拉取该供应商全部可用模型并合并进下拉（本地缓存 7 天），以后出新模型无需等版本更新。
-
-### Q: 如何导出数据？
-A: 点击插件图标，在"数据导出"部分选择格式（JSON/JSONL/Markdown/训练数据），点击对应按钮即可导出。
-
-### Q: 自动浏览会不会太快触发风控？
-A: 不会。插件有智能频率控制和行为模拟，会自动调整速度。建议使用"正常"或"慢速"模式。
-
-### Q: 可以同时在多个标签页使用吗？
-A: 可以，但建议一次只在一个标签页使用自动浏览功能，避免请求过于频繁。
-
-### Q: 数据存储在哪里？
-A: 存储在浏览器的 IndexedDB 中，路径：Chrome DevTools → Application → IndexedDB → xhs_collector
-
-### Q: 如何清空数据？
-A: 点击插件图标，在底部点击"清空数据"按钮。注意：此操作不可撤销。
-
-### Q: API 费用大概多少？
-A: 取决于使用的模型和图片数量。使用 Gemini 3.7 Flash 等新一代多模态模型 + 默认图片数量，成本极低，每 100 次分析通常 $0.5 以内。
-
----
-
-## 🛠️ 技术架构
-
-### 核心技术
-- **Manifest V3** - Chrome 扩展最新标准
-- **Content Scripts** - 页面注入和数据拦截
-- **Service Worker** - 后台数据处理
-- **IndexedDB** - 本地数据存储
-- **Chrome Storage API** - 配置同步
-
-### 文件结构
-```
-xhs-collector/
-├── manifest.json          # 扩展配置文件
-├── background.js          # Service Worker
-├── injector.js            # API 拦截脚本（MAIN world）
-├── bridge.js              # 桥接脚本（ISOLATED world）
-├── ai-panel.css           # AI 面板样式
-├── onboarding.html / .js  # 首次使用引导页
-├── lib/storage.js         # IndexedDB 封装
-├── popup/                 # Popup 与设置界面
-│   ├── popup.html / .css / .js
-│   └── settings.html / .css / .js
-├── icons/                 # 图标资源
-└── package.sh             # 打包脚本
+```bash
+node mcp/server.mjs --corpus mcp/sample-corpus.json
 ```
 
----
+进程等待 stdio MCP 请求属于正常现象。实际使用时应由 Claude Desktop、Cursor、Cline 等 MCP 客户端启动它。
 
-## 🤝 贡献指南
+## 快速开始：浏览器插件
 
-欢迎贡献代码、报告问题或提出建议！
+1. 正常打开并浏览 [小红书网页版](https://www.xiaohongshu.com/)，插件会被动收集浏览过的公开笔记。
+2. 点击浏览器工具栏中的插件图标，查看统计、自动浏览或导出数据。
+3. 如需 AI 分析，在设置页选择服务商、填写自己的 API Key 并测试连接。
+4. 在详情页、信息流或博主主页打开 AI 面板，选择对应分析模式。
 
-### 报告问题
-- 前往 [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) 页面
-- 描述问题和复现步骤
-- 附上截图或错误信息
+图片数量、视频截帧数、自动浏览速度和访问频率均可在设置页调整。建议先使用保守或均衡预设。
 
-### 提交代码
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+## MCP + CLI Bridge
 
----
+MCP server 支持两类数据源，可以只启用其中一种，也可以同时启用。
 
-## 📄 许可证
+### 方式一：查询插件导出的本地语料
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+在插件 Popup 中选择“数据导出 → JSON”，保存为例如 `~/xhs-corpus.json`，然后配置 MCP 客户端：
 
----
+```json
+{
+  "mcpServers": {
+    "xhs": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/xiaohongshu-content-collector/mcp/server.mjs",
+        "--corpus",
+        "/ABSOLUTE/PATH/xhs-corpus.json"
+      ]
+    }
+  }
+}
+```
 
-## 🙏 致谢
+- Claude Desktop：`~/Library/Application Support/Claude/claude_desktop_config.json`
+- Cursor：项目的 `.cursor/mcp.json`
+- Cline：`cline_mcp_settings.json`
 
-- 感谢 [OpenRouter](https://openrouter.ai/) 提供多模型 API 支持
-- 感谢所有贡献者和用户的支持
+每次调用都会重新读取语料文件，重新导出后不需要重启 MCP server。
 
----
+### 方式二：启用实时只读查询
 
-## 📮 联系方式
+安装并登录 `xiaohongshu-cli`：
 
-- 问题反馈：[GitHub Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues)
-- 功能建议：[GitHub Discussions](https://github.com/fancyyan/xiaohongshu-content-collector/discussions)
-- 邮箱：fancyyan@icloud.com
+```bash
+uv tool install xiaohongshu-cli
+xhs login
+xhs status
+```
 
----
+如果 `xhs` 不在 MCP 客户端的 `PATH`，在上面的 `args` 中追加：
+
+```json
+["--xhs-bin", "/ABSOLUTE/PATH/TO/xhs"]
+```
+
+也可以使用环境变量：
+
+```text
+XHS_CLI_BIN=/absolute/path/to/xhs
+XHS_CLI_TIMEOUT_MS=45000
+XHS_CORPUS=/absolute/path/to/xhs-corpus.json
+```
+
+CLI Bridge 默认超时 45 秒，允许范围为 5–120 秒。实时调用会串行执行，不会自动翻完全部评论，也不会暴露点赞、收藏、评论、关注、删除或发布操作。
+
+### 工具清单
+
+| 工具 | 数据源 | 作用 |
+|---|---|---|
+| `search_notes` | 本地语料 | 按关键词、来源、类型或标签检索 |
+| `get_note` | 本地语料 | 按 `noteId` 读取完整笔记 |
+| `list_creators` | 本地语料 | 按博主聚合笔记与互动 |
+| `stats` | 本地语料 | 统计数量、来源、类型、时间和标签 |
+| `trending_tags` | 本地语料 | 返回高频标签及样本 |
+| `recent_notes` | 本地语料 | 返回最近采集的笔记 |
+| `xhs_status` | CLI | 检查登录状态 |
+| `xhs_search` | CLI | 实时搜索笔记 |
+| `xhs_read` | CLI | 读取一条笔记详情 |
+| `xhs_comments` | CLI | 读取一页评论 |
+| `xhs_hot` | CLI | 读取分类热门内容 |
+
+更多协议、字段和调试说明见 [mcp/README.md](mcp/README.md)。
+
+### 示例提问
+
+- “搜索 5 条最近的露营笔记，比较标题钩子和互动结构。”
+- “从我的本地语料找出高频标签，并给出 5 个差异化选题。”
+- “先实时搜索公路车，再读互动最高的一条详情和一页评论，总结用户痛点。”
+- “找出本地语料互动最高的博主，生成博主画像和内容支柱。”
+
+## 隐私与安全
+
+- 插件采集的数据默认保存在本机浏览器 IndexedDB；项目本身不提供云端数据仓库。
+- 只有当你主动使用 AI 分析时，选中的文本或图片才会发送给你配置的 AI 服务商。
+- 本地语料 MCP 不联网；实时 `xhs_*` 工具会通过本机 CLI 访问小红书。
+- MCP 不读取插件 API Key，不写入语料，不启动网络端口。
+- CLI 子进程不经过 shell，调用限制在只读白名单，输出会过滤临时认证字段。
+- 不要提交导出的语料、Cookie、令牌、API Key 或包含个人信息的日志。
+
+## 开发与测试
+
+```bash
+node --test mcp/server.test.mjs
+node --check mcp/server.mjs
+```
+
+项目结构：
+
+```text
+xiaohongshu-content-collector/
+├── manifest.json           # Chrome 扩展清单
+├── background.js           # Service Worker
+├── injector.js             # 页面 API 拦截
+├── bridge.js               # 数据与 AI 面板桥接
+├── popup/                  # Popup 和设置页
+├── lib/storage.js          # IndexedDB 封装
+└── mcp/
+    ├── server.mjs          # 零依赖 MCP server
+    ├── server.test.mjs     # 集成测试
+    ├── sample-corpus.json  # 示例语料
+    └── README.md           # MCP 开发文档
+```
+
+## 常见问题
+
+**不配置 AI API Key 可以使用吗？**  可以。采集、导出和 MCP 本地语料工具不需要 AI API Key。
+
+**视频分析会上传原始视频吗？**  不会。浏览器在本地截取画面，仅把选中的 JPEG 帧发送给已配置的 AI 服务商。
+
+**为什么实时工具提示 `cli_not_found`？**  MCP 客户端通常不会继承终端的完整 `PATH`。请在配置中用 `--xhs-bin` 指定 `xhs` 的绝对路径。
+
+**为什么实时工具提示未登录或验证码？**  请先在同一台机器上运行 `xhs login` 和 `xhs status`。登录态及验证码处理由 `xiaohongshu-cli` 管理。
+
+**如何更新本地语料？**  重新从插件导出到同一个 JSON 文件即可，MCP 每次调用都会重新读取。
+
+## 贡献
+
+欢迎通过 [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) 报告问题或提出建议，也欢迎 Fork 后提交 Pull Request。提交前请运行 MCP 测试，并确认改动中不包含账号凭证和个人语料。
+
+## 许可证
+
+[MIT](LICENSE)
 
 <div align="center">
 
-**⭐ 如果这个项目对你有帮助，请给个 Star！**
+如果项目对你有帮助，欢迎点一个 ⭐
 
 Made with ❤️ by [Fancy Yan](https://github.com/fancyyan)
 

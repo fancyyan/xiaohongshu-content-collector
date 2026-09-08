@@ -4,10 +4,11 @@
  *
  * 把你在插件里本地采集的小红书语料(由插件「导出 > JSON」产出的 corpus.json)
  * 暴露给 MCP 客户端(Claude Desktop / Cursor / Cline 等),让 AI agent 能
- * 检索、统计、并用插件自带的"爆款拆解/仿写/标签/选题/博主画像"视角分析。
+ * 检索、统计、并用插件自带的"爆款拆解/仿写/标签/选题/博主画像"视角分析；
+ * 可选调用本机 xiaohongshu-cli 实时搜索、读详情、评论与分类热门内容。
  *
  * 零依赖:仅用 Node 内置模块。
- * 启动: node mcp/server.mjs --corpus <路径>   或   XHS_CORPUS=<路径> node mcp/server.mjs
+ * 启动: node mcp/server.mjs --corpus <路径> [--xhs-bin <路径>]
  *
  * 语料 schema = lib/storage.js 的 post 对象:
  *   noteId,title,content,tags[],type('normal'|'video'),source,authorId,authorName,
@@ -16,11 +17,25 @@
  */
 
 import { readFile } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'xhs-collector-mcp';
-const SERVER_VERSION = '1.3.0';
+const SERVER_VERSION = '1.4.0';
+
+function cliOption(name, envName, fallback) {
+  const index = process.argv.indexOf(name);
+  if (index !== -1 && process.argv[index + 1]) return process.argv[index + 1];
+  return process.env[envName] || fallback;
+}
+
+const XHS_BIN = cliOption('--xhs-bin', 'XHS_CLI_BIN', 'xhs');
+const XHS_TIMEOUT_MS = Math.min(
+  Math.max(num(cliOption('--xhs-timeout', 'XHS_CLI_TIMEOUT_MS', '45000')), 5000),
+  120000,
+);
+const XHS_MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
 
 // ---- 语料路径解析 ----
 function corpusPath() {
@@ -44,19 +59,228 @@ function loadCorpus() {
         return resolveP({ ok: false, reason: `语料 JSON 解析失败:${e.message}`, posts: [] });
       }
       if (!Array.isArray(arr)) {
-        // 兼容 {data:[...]} / {posts:[...]} 形态
-        arr = (arr && (arr.data || arr.posts)) || [];
+        // 兼容 {data:[...]} / {posts:[...]} 形态，但不把任意对象误当成数组。
+        arr = Array.isArray(arr?.data) ? arr.data : Array.isArray(arr?.posts) ? arr.posts : [];
       }
-      resolveP({ ok: arr.length > 0, reason: arr.length === 0 ? '语料为空' : '', posts: arr });
+      // 导出文件可能经过人工合并或清洗，跳过 null / 字符串等无效记录。
+      arr = arr.filter((post) => post && typeof post === 'object' && !Array.isArray(post));
+      resolveP({ ok: arr.length > 0, reason: arr.length === 0 ? '语料为空或没有有效记录' : '', posts: arr });
     });
   });
 }
 
 // ---- 工具函数 ----
-const num = (v, d = 0) => (typeof v === 'number' && !Number.isNaN(v)) ? v : d;
+function num(value, fallback = 0) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value !== 'string') return fallback;
+
+  const normalized = value.trim().replace(/,/g, '');
+  if (!normalized) return fallback;
+  const match = /^(-?\d+(?:\.\d+)?)\s*(亿|万|千|[wk])?\+?$/i.exec(normalized);
+  if (!match) return fallback;
+
+  const multipliers = { '亿': 1e8, '万': 1e4, '千': 1e3, w: 1e4, k: 1e3 };
+  const unit = match[2]?.toLowerCase();
+  const parsed = Number(match[1]) * (multipliers[unit] || 1);
+  return Number.isFinite(parsed) ? Math.round(parsed) : fallback;
+}
 const interaction = (p) => num(p.likedCount) + num(p.collectedCount) + num(p.commentCount);
 const snippet = (s, n = 200) => (s ? (s.length > n ? s.slice(0, n) + '…' : s) : '');
 const noteUrl = (p) => p.noteUrl || (p.noteId ? `https://www.xiaohongshu.com/explore/${p.noteId}` : '');
+
+function boundedInt(value, fallback, min, max) {
+  return Math.min(Math.max(Math.round(num(value, fallback)), min), max);
+}
+
+function safeCliMessage(value) {
+  return String(value || '')
+    .replace(/"(?:xsec_token|xsec_source|cookie|authorization|token)"\s*:\s*"[^"]*"/gi, '"credential":"[已隐藏]"')
+    .replace(/([?&](?:xsec_token|xsec_source)=)[^&\s]+/gi, '$1[已隐藏]')
+    .replace(/(cookie|authorization|token)[=:\s]+[^\s]+/gi, '$1=[已隐藏]')
+    .trim()
+    .slice(0, 500);
+}
+
+function cliError(code, message, details) {
+  return {
+    ok: false,
+    error: {
+      code,
+      message: safeCliMessage(message),
+      ...(details ? { details: safeCliMessage(details) } : {}),
+    },
+  };
+}
+
+function runXhsNow(args) {
+  return new Promise((resolveP) => {
+    let stdout = '';
+    let stderr = '';
+    let outputBytes = 0;
+    let timedOut = false;
+    let oversized = false;
+    let settled = false;
+    let child;
+    let timer = null;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      resolveP(result);
+    };
+
+    try {
+      child = spawn(XHS_BIN, [...args, '--json'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, OUTPUT: 'json' },
+        shell: false,
+      });
+    } catch (error) {
+      resolveP(cliError('cli_start_failed', '无法启动 xiaohongshu-cli', error.message));
+      return;
+    }
+
+    timer = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGTERM');
+    }, XHS_TIMEOUT_MS);
+
+    const collect = (target, chunk) => {
+      outputBytes += Buffer.byteLength(chunk);
+      if (outputBytes > XHS_MAX_OUTPUT_BYTES) {
+        oversized = true;
+        child.kill('SIGTERM');
+        return target;
+      }
+      return target + chunk;
+    };
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout = collect(stdout, chunk); });
+    child.stderr.on('data', (chunk) => { stderr = collect(stderr, chunk); });
+    child.on('error', (error) => {
+      finish(cliError(
+        error.code === 'ENOENT' ? 'cli_not_found' : 'cli_start_failed',
+        error.code === 'ENOENT' ? `未找到 xhs 命令：${XHS_BIN}` : '无法启动 xiaohongshu-cli',
+        error.message,
+      ));
+    });
+    child.on('close', (code) => {
+      if (timedOut) return finish(cliError('cli_timeout', `xiaohongshu-cli 超过 ${XHS_TIMEOUT_MS}ms 未完成`));
+      if (oversized) return finish(cliError('cli_output_too_large', 'xiaohongshu-cli 输出超过 8MB 限制'));
+
+      let envelope;
+      try {
+        envelope = JSON.parse(stdout);
+      } catch {
+        return finish(cliError(
+          code === 0 ? 'cli_invalid_json' : 'cli_exit_error',
+          code === 0 ? 'xiaohongshu-cli 未返回有效 JSON' : `xiaohongshu-cli 退出码 ${code}`,
+          stderr || stdout,
+        ));
+      }
+      if (!envelope || typeof envelope !== 'object') {
+        return finish(cliError('cli_invalid_envelope', 'xiaohongshu-cli 返回格式无效'));
+      }
+      if (code !== 0 && envelope.ok !== false) {
+        return finish(cliError('cli_exit_error', `xiaohongshu-cli 退出码 ${code}`, stderr));
+      }
+      finish(envelope);
+    });
+  });
+}
+
+// 串行执行，避免多个 MCP 调用同时访问小红书而放大风控风险。
+let xhsQueue = Promise.resolve();
+function runXhs(args) {
+  const current = xhsQueue.then(() => runXhsNow(args));
+  xhsQueue = current.then(() => undefined, () => undefined);
+  return current;
+}
+
+function imageUrl(image) {
+  if (!image || typeof image !== 'object') return '';
+  if (image.url_default || image.url_pre || image.url) {
+    return image.url_default || image.url_pre || image.url;
+  }
+  const info = Array.isArray(image.info_list) ? image.info_list : [];
+  return info.find((entry) => entry?.image_scene === 'WB_DFT')?.url
+    || info.find((entry) => entry?.image_scene === 'WB_PRV')?.url
+    || info.find((entry) => entry?.url)?.url
+    || '';
+}
+
+function normalizeLiveNote(item, source) {
+  const card = item?.note_card || item?.note || item;
+  if (!card || typeof card !== 'object') return null;
+  const noteId = card.note_id || item?.id || card.id;
+  if (!noteId) return null;
+  const user = card.user || {};
+  const interact = card.interact_info || {};
+  const images = (Array.isArray(card.image_list) ? card.image_list : []).map(imageUrl).filter(Boolean);
+  const tags = (Array.isArray(card.tag_list) ? card.tag_list : [])
+    .filter((tag) => tag && (!tag.type || tag.type === 'topic'))
+    .map((tag) => tag.name)
+    .filter(Boolean);
+  const videoUrl = card.video?.media?.stream?.h264?.[0]?.master_url
+    || card.video?.media?.stream?.h265?.[0]?.master_url
+    || '';
+
+  return {
+    noteId: String(noteId),
+    type: card.type === 'video' ? 'video' : 'normal',
+    title: card.display_title || card.title || '',
+    content: card.desc || '',
+    coverUrl: card.cover?.url_default || card.cover?.url_pre || images[0] || '',
+    images,
+    videoUrl,
+    videoDuration: num(card.video?.capa?.duration || card.video?.media?.video?.duration),
+    authorId: user.user_id || '',
+    authorName: user.nickname || user.nick_name || '',
+    authorAvatar: user.avatar || '',
+    likedCount: num(interact.liked_count),
+    collectedCount: num(interact.collected_count),
+    commentCount: num(interact.comment_count),
+    shareCount: num(interact.share_count ?? interact.shared_count),
+    tags,
+    publishTime: card.time || card.last_update_time || null,
+    ipLocation: card.ip_location || '',
+    source,
+    noteUrl: `https://www.xiaohongshu.com/explore/${noteId}`,
+    capturedAt: Date.now(),
+  };
+}
+
+function normalizeLiveNotes(envelope, source, limit) {
+  const data = envelope?.data;
+  const items = Array.isArray(data) ? data
+    : Array.isArray(data?.items) ? data.items
+      : Array.isArray(data?.notes) ? data.notes
+        : [];
+  return items.map((item) => normalizeLiveNote(item, source)).filter(Boolean).slice(0, limit);
+}
+
+function normalizeComment(comment) {
+  if (!comment || typeof comment !== 'object') return null;
+  const user = comment.user_info || comment.user || {};
+  return {
+    commentId: comment.id || '',
+    noteId: comment.note_id || '',
+    content: comment.content || '',
+    likedCount: num(comment.like_count),
+    createdAt: comment.create_time || null,
+    ipLocation: comment.ip_location || '',
+    authorId: user.user_id || user.id || '',
+    authorName: user.nickname || user.nick_name || '',
+    authorAvatar: user.image || user.avatar || '',
+    replyCount: num(comment.sub_comment_count),
+    replies: (Array.isArray(comment.sub_comments) ? comment.sub_comments : [])
+      .map(normalizeComment)
+      .filter(Boolean),
+  };
+}
 
 const trimForList = (p) => ({
   noteId: p.noteId,
@@ -78,7 +302,7 @@ const trimForList = (p) => ({
 async function tool_search_notes(args) {
   const { posts, ok, reason } = await loadCorpus();
   if (!ok) return reasonNote(reason);
-  const q = (args?.query || '').trim().toLowerCase();
+  const q = String(args?.query || '').trim().toLowerCase();
   const limit = Math.min(Math.max(num(args?.limit, 10), 1), 100);
   const src = args?.source, typ = args?.type, tag = args?.tag;
   let hit;
@@ -145,13 +369,13 @@ async function tool_stats() {
   const { posts, ok, reason } = await loadCorpus();
   if (!ok) return reasonNote(reason);
   const bySource = {}, byType = {}, tagCount = {};
-  let first = Infinity, last = -Infinity;
+  let first = Infinity, last = -Infinity, dated = 0;
   const inter = [];
   for (const p of posts) {
     bySource[p.source || 'unknown'] = (bySource[p.source || 'unknown'] || 0) + 1;
     byType[p.type || 'normal'] = (byType[p.type || 'normal'] || 0) + 1;
     const cap = num(p.capturedAt);
-    if (cap) { first = Math.min(first, cap); last = Math.max(last, cap); }
+    if (cap) { first = Math.min(first, cap); last = Math.max(last, cap); dated += 1; }
     const iv = interaction(p); inter.push(iv);
     for (const t of (Array.isArray(p.tags) ? p.tags : [])) tagCount[t] = (tagCount[t] || 0) + 1;
   }
@@ -159,7 +383,7 @@ async function tool_stats() {
   const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([t, c]) => ({ tag: t, count: c }));
   return {
     total: posts.length, bySource, byType,
-    dateRange: posts.length ? { first, last } : null,
+    dateRange: dated > 0 ? { first, last } : null,
     interactionP95: inter.length ? inter[Math.min(inter.length - 1, Math.floor(inter.length * 0.95))] : 0,
     topTags,
   };
@@ -185,6 +409,85 @@ async function tool_recent_notes(args) {
   return posts.slice().sort((a, b) => num(b.capturedAt) - num(a.capturedAt)).slice(0, limit).map(trimForList);
 }
 
+async function tool_xhs_status() {
+  const envelope = await runXhs(['status']);
+  if (!envelope.ok) return envelope;
+  const user = envelope.data?.user || {};
+  return {
+    ok: true,
+    authenticated: Boolean(envelope.data?.authenticated),
+    user: envelope.data?.authenticated ? {
+      id: user.id || user.user_id || '',
+      name: user.name || user.nickname || '',
+      redId: user.red_id || user.username || '',
+      description: user.desc || '',
+    } : null,
+  };
+}
+
+async function tool_xhs_search(args) {
+  const query = String(args?.query || '').trim();
+  if (!query) return cliError('invalid_arguments', '缺少 query 参数');
+  const sort = ['general', 'popular', 'latest'].includes(args?.sort) ? args.sort : 'general';
+  const type = ['all', 'video', 'image'].includes(args?.type) ? args.type : 'all';
+  const page = boundedInt(args?.page, 1, 1, 100);
+  const limit = boundedInt(args?.limit, 10, 1, 20);
+  const envelope = await runXhs(['search', query, '--sort', sort, '--type', type, '--page', String(page)]);
+  if (!envelope.ok) return envelope;
+  return {
+    ok: true,
+    query,
+    page,
+    hasMore: Boolean(envelope.data?.has_more),
+    notes: normalizeLiveNotes(envelope, 'cli_search', limit),
+  };
+}
+
+async function tool_xhs_read(args) {
+  const reference = String(args?.idOrUrl || args?.noteId || '').trim();
+  if (!reference) return cliError('invalid_arguments', '缺少 idOrUrl 参数');
+  const envelope = await runXhs(['read', reference]);
+  if (!envelope.ok) return envelope;
+  const notes = normalizeLiveNotes(envelope, 'cli_detail', 1);
+  if (notes.length === 0) return cliError('note_not_found', 'CLI 返回成功，但没有可识别的笔记数据');
+  return { ok: true, note: notes[0] };
+}
+
+async function tool_xhs_comments(args) {
+  const reference = String(args?.idOrUrl || args?.noteId || '').trim();
+  if (!reference) return cliError('invalid_arguments', '缺少 idOrUrl 参数');
+  const limit = boundedInt(args?.limit, 20, 1, 100);
+  const command = ['comments', reference];
+  if (args?.cursor) command.push('--cursor', String(args.cursor));
+  const envelope = await runXhs(command);
+  if (!envelope.ok) return envelope;
+  const comments = (Array.isArray(envelope.data?.comments) ? envelope.data.comments : [])
+    .map(normalizeComment)
+    .filter(Boolean)
+    .slice(0, limit);
+  return {
+    ok: true,
+    noteId: comments.find((comment) => comment.noteId)?.noteId || '',
+    comments,
+    hasMore: Boolean(envelope.data?.has_more),
+    cursor: envelope.data?.cursor || '',
+  };
+}
+
+async function tool_xhs_hot(args) {
+  const categories = ['fashion', 'food', 'cosmetics', 'movie', 'career', 'love', 'home', 'gaming', 'travel', 'fitness'];
+  const category = categories.includes(args?.category) ? args.category : 'food';
+  const limit = boundedInt(args?.limit, 10, 1, 20);
+  const envelope = await runXhs(['hot', '--category', category]);
+  if (!envelope.ok) return envelope;
+  return {
+    ok: true,
+    category,
+    hasMore: Boolean(envelope.data?.has_more),
+    notes: normalizeLiveNotes(envelope, `cli_hot_${category}`, limit),
+  };
+}
+
 function reasonNote(reason) {
   return { note: '语料不可用', reason: reason || '请先在插件里「导出 > JSON」产出语料文件,并让本 server 指向它(--corpus 路径)。' };
 }
@@ -197,7 +500,26 @@ const TOOLS = [
   { name: 'stats', description: '返回语料统计:总数、按来源/类型分布、采集时间范围、互动 P95、Top 标签。', inputSchema: { type: 'object' } },
   { name: 'trending_tags', description: '返回语料中频次最高的标签(及各标签的样本 noteId),近似判断近期热门话题。', inputSchema: { type: 'object', properties: { top: { type: 'integer', default: 20, minimum: 1, maximum: 100 } } } },
   { name: 'recent_notes', description: '按采集时间倒序返回最近一批笔记。', inputSchema: { type: 'object', properties: { limit: { type: 'integer', default: 10, minimum: 1, maximum: 100 } } } },
+  { name: 'xhs_status', description: '通过本机 xiaohongshu-cli 只读检查登录状态和当前账号。不会返回 Cookie 或 xsec_token。', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'xhs_search', description: '通过本机 xiaohongshu-cli 实时搜索小红书笔记，并归一化为插件语料字段。只读、串行执行。', inputSchema: { type: 'object', properties: { query: { type: 'string', description: '搜索关键词' }, sort: { type: 'string', enum: ['general', 'popular', 'latest'], default: 'general' }, type: { type: 'string', enum: ['all', 'video', 'image'], default: 'all' }, page: { type: 'integer', minimum: 1, maximum: 100, default: 1 }, limit: { type: 'integer', minimum: 1, maximum: 20, default: 10 } }, required: ['query'], additionalProperties: false } },
+  { name: 'xhs_read', description: '通过本机 xiaohongshu-cli 读取一条笔记详情，返回正文、标签、互动数、图片和视频信息。', inputSchema: { type: 'object', properties: { idOrUrl: { type: 'string', description: '笔记 ID 或完整小红书 URL；优先使用 xhs_search 返回的 noteId' } }, required: ['idOrUrl'], additionalProperties: false } },
+  { name: 'xhs_comments', description: '通过本机 xiaohongshu-cli 读取一页评论并脱敏归一化；不会自动全量翻页。', inputSchema: { type: 'object', properties: { idOrUrl: { type: 'string', description: '笔记 ID 或完整小红书 URL' }, cursor: { type: 'string', description: '可选分页 cursor' }, limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, required: ['idOrUrl'], additionalProperties: false } },
+  { name: 'xhs_hot', description: '通过本机 xiaohongshu-cli 读取指定分类的热门笔记，并归一化为插件语料字段。', inputSchema: { type: 'object', properties: { category: { type: 'string', enum: ['fashion', 'food', 'cosmetics', 'movie', 'career', 'love', 'home', 'gaming', 'travel', 'fitness'], default: 'food' }, limit: { type: 'integer', minimum: 1, maximum: 20, default: 10 } }, additionalProperties: false } },
 ];
+
+const TOOL_HANDLERS = {
+  search_notes: tool_search_notes,
+  get_note: tool_get_note,
+  list_creators: tool_list_creators,
+  stats: tool_stats,
+  trending_tags: tool_trending_tags,
+  recent_notes: tool_recent_notes,
+  xhs_status: tool_xhs_status,
+  xhs_search: tool_xhs_search,
+  xhs_read: tool_xhs_read,
+  xhs_comments: tool_xhs_comments,
+  xhs_hot: tool_xhs_hot,
+};
 
 function resourcesList() {
   return [
@@ -278,7 +600,7 @@ async function handle(req) {
         const { name, arguments: ag } = params || {};
         const t = TOOLS.find((x) => x.name === name);
         if (!t) return rpcError(id, -32602, `未知工具:${name}`);
-        const fn = { search_notes: tool_search_notes, get_note: tool_get_note, list_creators: tool_list_creators, stats: tool_stats, trending_tags: tool_trending_tags, recent_notes: tool_recent_notes }[name];
+        const fn = TOOL_HANDLERS[name];
         const out = await fn(ag);
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }] } };
       }

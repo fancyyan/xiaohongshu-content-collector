@@ -2,453 +2,239 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)
+![Extension](https://img.shields.io/badge/Chrome_Extension-1.3.0-4285F4.svg)
+![MCP](https://img.shields.io/badge/MCP_Server-1.4.0-7C3AED.svg)
+![Node](https://img.shields.io/badge/Node.js-18%2B-339933.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Chrome](https://img.shields.io/badge/chrome-v88+-brightgreen.svg)
 ![GitHub stars](https://img.shields.io/github/stars/fancyyan/xiaohongshu-content-collector?style=flat)
-![Last Commit](https://img.shields.io/github/last-commit/fancyyan/xiaohongshu-content-collector)
-![Made with Vibe Coding](https://img.shields.io/badge/made%20with-Vibe%20Coding-ff69b4)
 
-An intelligent Xiaohongshu (Little Red Book) content collection and analysis tool with automatic data collection, AI multimodal analysis, and data export capabilities.
+A local-first Xiaohongshu collection, AI analysis, and MCP toolkit.
 
-[Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [FAQ](#-faq)
+The Chrome extension passively collects content and provides multimodal analysis. The MCP server searches your local corpus and can use `xiaohongshu-cli` for live, read-only search, note details, comments, and trending feeds.
 
-[中文文档](README.md)
+[中文](README.md) · [Install](#installation) · [MCP + CLI Bridge](#mcp--cli-bridge) · [Changelog](CHANGELOG.md) · [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues)
 
 </div>
 
-## 🎬 Demo
+> [!IMPORTANT]
+> This project is intended for personal learning, research, and content management. Follow Xiaohongshu's terms, applicable laws, and reasonable request rates. You are responsible for account restrictions, verification challenges, and other platform risks.
 
-> 📺 Browse Xiaohongshu → auto-collect → one-click multimodal AI viral breakdown → multi-format export (fully local, nothing uploaded)
+## What's new in v1.4.0
 
-<p align="center"><img src="docs/screenshots/demo.gif" alt="Demo: browse Xiaohongshu → auto-collect → AI viral breakdown → export" width="600"></p>
+- Connects the local [`xiaohongshu-cli`](https://github.com/jackwener/xiaohongshu-cli) to the existing MCP server.
+- Adds five live, read-only tools: `xhs_status`, `xhs_search`, `xhs_read`, `xhs_comments`, and `xhs_hot`.
+- Normalizes CLI responses to the extension's corpus schema so live and exported notes can be analyzed together.
+- Serializes CLI calls, disables shell execution, limits output size, and strips Cookie and `xsec_token` values.
+- Adds seven dependency-free integration tests covering field mapping, malformed corpora, a missing CLI, and credential redaction.
 
----
+This release only updates the standalone MCP server. The Chrome extension runtime remains at `v1.3.0`.
 
-## ✨ Features
+## What it does
 
-### 📊 Smart Data Collection
-- **Passive API Interception** - Automatically intercepts Xiaohongshu API requests without active crawling
-- **Multi-scenario Support** - Supports feed, search, detail pages, and user profiles
-- **DOM Supplementary Scanning** - Combines DOM scanning to ensure data completeness
-- **Deduplication Storage** - Automatic deduplication to avoid duplicate collection
+| Workflow | Data source | Best for | Network behavior |
+|---|---|---|---|
+| Chrome extension | Public notes you view in the browser | Passive collection, organization, image/video AI analysis, export | Collection stays local; AI analysis calls your configured model provider |
+| Local corpus MCP | JSON exported by the extension | Search, statistics, trending tags, creator profiles, viral breakdowns | Does not access Xiaohongshu |
+| CLI Bridge | Local `xiaohongshu-cli` | Live search, note details, one page of comments, category feeds | Uses the CLI's local login session to access Xiaohongshu |
 
-### 🤖 AI Multimodal Analysis
-- **Multiple Provider Support** - OpenRouter, Anthropic, OpenAI, Google AI, Qwen (Tongyi Qianwen), DeepSeek, MiniMax, and custom endpoints
-- **China-based API Support** - Added Qwen, DeepSeek, MiniMax for users in China
-- **🔄 Dynamic Model List Refresh** - OpenRouter / Qwen can fetch all latest available models from the official `/models` endpoint and merge them into the dropdown with one click (locally cached for 7 days); auto-updates after a successful connection test. The built-in model list is updated to the 2026-08 current generation
-- **Text & Image Analysis** - Analyzes both text content and visual style simultaneously
-- **🎬 Video Frame Analysis** - Automatically captures multiple frames from videos (default 6 frames, configurable 2-12), AI analyzes narrative structure and video quality frame by frame
-- **Multiple Analysis Modes** - Content analysis, copywriting, viral potential, tag suggestions, visual diagnostics, etc.
-- **Video-specific Analysis** - Completion rate diagnosis, imitation script generation, viral benchmark analysis
-- **Batch Analysis** - Select multiple posts for one-click batch AI analysis with content analysis, viral detection, and tag analysis
-- **Auto Analysis** - Automatically triggers AI analysis after auto-browsing completes
-- **Analysis History** - All AI analysis results are auto-saved, with view, copy, and delete support
-- **Custom Prompts** - Add custom analysis templates in settings, supports selecting custom prompts in batch analysis
-- **Real-time Analysis** - Direct AI analysis in the browser
+```mermaid
+flowchart LR
+  XHS[Xiaohongshu web] --> EXT[Chrome extension]
+  EXT --> DB[(IndexedDB)]
+  DB --> JSON[Exported JSON]
+  JSON --> MCP[MCP server]
+  CLI[xiaohongshu-cli] --> MCP
+  MCP --> AGENT[Claude / Cursor / Cline]
+  EXT --> AI[Optional AI provider]
+```
 
-### 🛡️ Smart Anti-Detection
-- **Rate Limiting** - Sliding window statistics with intelligent throttling
-- **Behavior Simulation** - Simulates real user behavior (random scrolling, pauses, fatigue effects)
-- **Configurable Parameters** - Flexible adjustment of rate limits and behavior parameters
+## Features
 
-### 📤 Multiple Export Formats
-- **JSON** - Complete structured data
-- **JSONL** - Line-by-line format for easy processing
-- **Markdown** - Highly readable document format
-- **Training Data** - Format suitable for AI model fine-tuning
+- Passive interception across feeds, search, note detail pages, and creator profiles, with supplemental DOM scanning.
+- Deduplicated local IndexedDB storage and JSON, JSONL, Markdown, and training-data exports.
+- Image-post analysis, multi-frame video analysis, viral-potential review, rewriting, tags, topic ideas, and creator profiles.
+- OpenRouter, Anthropic, OpenAI, Google AI, Qwen, DeepSeek, MiniMax, and OpenAI-compatible endpoints.
+- Auto-browsing with rate controls, randomized pauses, and configurable presets.
+- MCP with six local-corpus tools, five live CLI tools, resources, and analysis prompts.
 
-### 💾 Storage Capacity Management
-- **Capacity Monitoring** - Real-time display of storage usage and capacity percentage
-- **Capacity Warnings** - Automatic alerts when approaching (80%) or reaching storage limit
-- **Flexible Cleanup** - Clean data by age, export status, or count
-- **Export Tracking** - Auto-marks exported data, supports cleaning exported records
+## Demo
 
-### ⚙️ Visual Configuration
-- **Settings Interface** - Complete visual settings page
-- **Step-by-step Guide** - Clear step indicators to guide users through configuration
-- **API Categories** - Recommended (International), China-based, Custom
-- **Quick Presets** - Conservative, balanced, fast collection, unlimited images
-- **Smart Validation** - Only requires API testing when API config changes
-- **Real-time Effect** - Configuration changes take effect immediately
-- **Help & Support** - Built-in tutorials, issue reporting, GitHub links
+> Browse Xiaohongshu → collect automatically → run multimodal AI analysis → export in multiple formats
 
-### 🔌 Integrations (MCP)
-- **MCP Interface** - Expose your local Xiaohongshu corpus as an MCP server so Claude / Cursor / Cline can search, aggregate, and analyze your notes with the plugin's viral-breakdown / copywriting / tags / topic / creator lenses (see 🔌 MCP Integration below)
+<p align="center"><img src="docs/screenshots/demo.gif" alt="Xiaohongshu Content Collector demo" width="680"></p>
 
----
+## Installation
 
-## 🧠 Supported AI Models (2026-08 current; built-in list refreshable with one click)
+### Chrome extension
 
-Built-in curated models; in settings click "🔄 Refresh Model List" to fetch **all available models** from the provider's official `/models` endpoint (cached locally for 7 days) — new models need no new release.
+1. Download the source archive from [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases), or clone the repository:
 
-**OpenRouter built-in (all multimodal unless noted)**
-- Google Gemini 3.7 Flash (default), Gemini 3.1 Pro
-- Anthropic Claude Opus 5, Sonnet 5, Haiku 4.5
-- OpenAI GPT-5.6 Luna, GPT-5.5, GPT-5.4 Mini
-- Qwen3.8 Max, Qwen3.7 Flash, Llama 4 Scout, DeepSeek V4 Flash (text only)
-
-**Qwen (Tongyi Qianwen / DashScope)**
-- Qwen VL Max / VL Plus (multimodal), Qwen Max / Plus / Turbo (text); after entering your API Key, click refresh to fetch all latest models from DashScope.
-
-**Other providers**: Anthropic (Claude official), OpenAI, Google AI, DeepSeek, MiniMax, custom OpenAI-compatible endpoints.
-
-## 🚀 Installation
-
-### Method 1: Install from Release (Recommended)
-
-1. **Download Package**
-   - Go to [Releases](https://github.com/fancyyan/xiaohongshu-content-collector/releases) page
-   - Download the latest version `xhs-collector-beta-v1.2.1.zip`
-   - Or direct download: [xhs-collector-beta-v1.2.1.zip](https://github.com/fancyyan/xiaohongshu-content-collector/releases/download/v1.2.1/xhs-collector-beta-v1.2.1.zip)
-
-2. **Extract Files**
-   - Extract the downloaded zip file to a local folder
-
-3. **Load into Chrome**
-   - Open Chrome browser
-   - Visit `chrome://extensions/`
-   - Enable "Developer mode" in the top right corner
-   - Click "Load unpacked"
-   - Select the extracted folder
-
-4. **Verify Installation**
-   - See "小红书内容收集器 (公测版)" in the extension list
-   - Icon appears in the browser toolbar
-
-### Method 2: Install from Source
-
-1. **Clone Repository**
    ```bash
    git clone https://github.com/fancyyan/xiaohongshu-content-collector.git
    cd xiaohongshu-content-collector
    ```
 
-2. **Load into Chrome**
-   - Follow steps 3-4 from Method 1
+2. Open `chrome://extensions/`.
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select the project directory containing `manifest.json`.
 
----
+### MCP server
 
-## 🎯 Quick Start
+Requirements: Node.js 18 or later. The server uses Node built-ins only, so there is no `npm install` step.
 
-### Step 1: Configure API (Optional)
+Verify that it starts:
 
-If you want to use AI analysis features, you need to configure an API:
-
-1. **Open Settings Page**
-   - Click the extension icon in the browser toolbar
-   - Click the **⚙️ Settings** button in the top right
-
-2. **Select API Provider**
-   - **Recommended (International)**: OpenRouter (multiple models), Anthropic, OpenAI, Google AI
-   - **China-based**: Qwen Tongyi Qianwen (multimodal), DeepSeek (text only), MiniMax (text only)
-   - **Custom**: Custom API endpoint
-   - Recommended: **OpenRouter** (multiple models, cost-effective) or **Qwen** (fast access in China)
-   - Get API Key:
-     - OpenRouter: https://openrouter.ai/keys
-     - Qwen: https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen
-
-3. **Configure API**
-   - Enter API Key
-   - Select AI Model (Recommended: Gemini 3.7 Flash, or click "🔄 Refresh Model List" to fetch all latest models)
-   - Click "Save"
-
-### Step 2: Start Collecting
-
-1. **Visit Xiaohongshu**
-   - Open https://www.xiaohongshu.com/
-   - Browse content normally
-
-2. **Automatic Collection**
-   - The extension automatically intercepts and collects browsed content
-   - No action required, passive collection
-
-3. **View Statistics**
-   - Click the extension icon to view collection statistics
-   - See the number of collected posts
-
-### Step 3: Use AI Analysis (Optional)
-
-1. **Open AI Panel**
-   - On Xiaohongshu pages, click the AI analysis button in the bottom right
-   - 🤖 (detail page), 📈 (feed), 👤 (user profile)
-
-2. **Select Analysis Type**
-   - Content analysis, copywriting, viral potential, etc.
-   - Click the corresponding button to start analysis
-
-3. **View Results**
-   - AI analyzes both text and image content
-   - Results can be copied or saved as files
-
-### Step 4: Export Data
-
-1. **Open Popup**
-   - Click the extension icon
-
-2. **Select Export Format**
-   - JSON, JSONL, Markdown, Training Data
-   - Click the corresponding button to export
-
-3. **Save File**
-   - Choose save location
-   - File will be downloaded automatically
-
----
-
-## 📖 Documentation
-
-### Auto-Browse Feature
-
-**Description:**
-Automatically scrolls the page, simulates real user browsing behavior, and collects content automatically.
-
-**Usage:**
-1. Open extension Popup
-2. Select scroll speed (slow/normal/fast)
-3. Set maximum scroll count
-4. Click "Start Auto Browse"
-
-**Notes:**
-- Recommended to use "normal" or "slow" mode
-- Don't set too large scroll count
-- Can click "Stop" button anytime
-
-### AI Analysis Features
-
-**Supported Analysis Types:**
-
-**Detail Page Analysis (Image Posts):**
-- 📊 Content Analysis - Analyze theme, style, audience, etc.
-- ✍️ Copywriting - Mimic style to write new copy
-- 🔥 Viral Potential - Evaluate viral possibility
-- 🏷️ Tag Suggestions - Recommend precise tags
-- 🎨 Visual Diagnostics - Analyze image style and composition
-
-**Video Post Analysis (New in v1.2.0):**
-- 🎬 Video Analysis - Scene description, shooting style, narrative structure
-- 🔥 Completion Rate Diagnosis - Hook strength, pacing analysis, drop-off risk points
-- ✍️ Imitation Script - Storyboard script, shooting tips, reusable templates
-- 🏷️ Tag Suggestions - Recommend precise tags based on video frames
-- 📊 Viral Benchmark - Cover frame selection, gap analysis vs viral videos
-
-**Feed Analysis:**
-- 📈 Trend Insights - Analyze popular topics and trends
-- 🎯 Topic Recommendations - Recommend potential topics
-- 🏆 Viral Post Analysis - Analyze high-engagement posts
-- 📊 Data Reports - Generate data analysis reports
-
-**User Profile Analysis:**
-- 👤 Creator Profile - Analyze positioning and style
-- 📐 Operation Strategy - Analyze operation methods
-- 🔥 Viral Post Review - Summarize viral post patterns
-- 🎯 Benchmark Suggestions - Recommend benchmark directions
-
-### Configuration
-
-**Image Quantity Limits:**
-- Detail page: Default 6 (Recommended 3-15)
-- Feed: Default 8 (Recommended 5-20)
-- User profile: Default 8 (Recommended 5-30)
-- Set to 0 for unlimited
-
-**Video Frame Count (New in v1.2.0):**
-- Default 6 frames, range 2-12
-- More frames = more detailed analysis, but higher token usage
-
-**Rate Control:**
-- Max requests per minute: Default 25 (Recommended 15-35)
-- Max requests per 5 minutes: Default 80 (Recommended 50-120)
-- Min request interval: Default 2500ms (Recommended 2000-4000)
-
-**Scroll Behavior:**
-- Upward scroll probability: Default 10% (Recommended 5-20%)
-- Long pause probability: Default 15% (Recommended 10-30%)
-- Fatigue threshold: Default 50/100 times
-
----
-
-## 🔧 Advanced Features
-
-### Custom API Endpoint
-
-If you have your own API service:
-
-1. Select "Custom" provider in settings page
-2. Enter API endpoint URL
-3. Enter API Key
-4. Ensure API is compatible with OpenAI format
-
-### Quick Presets
-
-**Conservative (Recommended for beginners):**
-- Images: 6/8/8
-- Rate: 20/min, 60/5min
-- Interval: 3000ms
-
-**Balanced (Default):**
-- Images: 6/8/8
-- Rate: 25/min, 80/5min
-- Interval: 2500ms
-
-**Fast Collection (Risky):**
-- Images: 10/15/15
-- Rate: 35/min, 100/5min
-- Interval: 2000ms
-
-**Unlimited Images:**
-- Images: Unlimited
-- Rate: 25/min, 80/5min
-- Interval: 2500ms
-
----
-
-## 🔌 MCP Integration (Query your Xiaohongshu corpus from Claude / Cursor)
-
-Expose the Xiaohongshu notes you've collected locally to AI agents via [MCP](https://modelcontextprotocol.io), so Claude Desktop / Cursor / Cline can search, aggregate, and analyze your notes with the plugin's "viral breakdown / copywriting / tags / topic / creator profile" lenses. **The corpus is limited to the public notes collected on your own machine; your API key is never written to the file.**
-
-> Zero dependencies: Node built-ins only, no `npm install`. The `mcp/` folder ships the server, a sample corpus, and dev docs.
-
-### 3-step setup
-
-1. **Export the corpus**: in the extension Popup, choose **Data Export → JSON** and save to a local path (e.g. `~/xhs-corpus.json`).
-2. **Configure your client** (replace `<REPO>` with this repo's path and `<CORPUS>` with the path above):
-
-   **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-   ```json
-   {
-     "mcpServers": {
-       "xhs": {
-         "command": "node",
-         "args": ["<REPO>/mcp/server.mjs", "--corpus", "<CORPUS>"]
-       }
-     }
-   }
-   ```
-   **Cursor** (`.cursor/mcp.json`) and **Cline** (`cline_mcp_settings.json`): the same `mcpServers` shape.
-
-3. **Ask your AI**:
-   - "Use `search_notes` to find 3 Xiaohongshu posts about sunscreen, then run the viral-breakdown lens on each."
-   - "Who is the top creator in my corpus? Build a creator profile."
-   - "What are the most frequent tags among notes I captured this week?"
-
-> Each tool call re-reads the corpus file — re-export and the agent sees fresh data with no restart.
-
-For the full tools / resources / prompts list and local debugging, see [`mcp/README.md`](mcp/README.md).
-
-## ❓ FAQ
-
-### Q: Is the extension safe? Will it leak data?
-A: Completely safe. All data is stored locally in the browser's IndexedDB and is not uploaded to any server. API Keys are also encrypted and stored locally.
-
-### Q: Does video analysis upload the original video?
-A: No. Frames are captured locally in the browser using the `<canvas>` API. Only the extracted JPEG screenshots are sent to the AI — the original video file is never uploaded.
-
-### Q: How many frames should I set for video analysis?
-A: The default 6 frames works well for most videos. Use 2-4 frames to save tokens, or 8-12 frames for longer videos where you want more detailed pacing analysis.
-
-### Q: Will I get banned by Xiaohongshu?
-A: The extension uses passive interception, simulates real user behavior, and has intelligent rate control. Normal use will not trigger anti-detection. Conservative configuration is recommended.
-
-### Q: Can I use it without configuring an API Key?
-A: Yes. Data collection features don't require an API Key. Only AI analysis features need API configuration.
-
-### Q: Which AI models are supported?
-A: Supports models from OpenRouter, Anthropic, OpenAI, Google AI, Qwen (multimodal), DeepSeek (text only), and MiniMax (text only). Recommended: OpenRouter's Gemini 3.7 Flash (multimodal, great value) or Qwen VL Max (fast in China, multimodal). You can click "🔄 Refresh Model List" in settings to pull the provider's full latest model list.
-
-### Q: How to refresh the model list when it looks outdated?
-A: OpenRouter and Qwen providers offer a "🔄 Refresh Model List" button in the settings page. OpenRouter requires no API key to refresh; Qwen refreshes after you enter and test your API Key. It fetches all available models from the official `/models` endpoint, merges them into the dropdown, and caches locally for 7 days — no need to wait for a new release when new models appear.
-
-### Q: How to export data?
-A: Click the extension icon, select format in the "Data Export" section (JSON/JSONL/Markdown/Training Data), and click the corresponding button to export.
-
-### Q: Will auto-browse trigger anti-detection?
-A: No. The extension has intelligent rate control and behavior simulation that automatically adjusts speed. "Normal" or "slow" mode is recommended.
-
-### Q: Can I use it in multiple tabs simultaneously?
-A: Yes, but it's recommended to use auto-browse in only one tab at a time to avoid excessive request frequency.
-
-### Q: Where is data stored?
-A: Stored in the browser's IndexedDB, path: Chrome DevTools → Application → IndexedDB → xhs_collector
-
-### Q: How to clear data?
-A: Click the extension icon and click the "Clear Data" button at the bottom. Note: This operation is irreversible.
-
-### Q: What are the API costs?
-A: Depends on the model used and number of images. Using Gemini 3.7 Flash (or similar current-gen multimodal models) + default image count, costs are very low — typically under $0.5 per 100 analyses.
-
----
-
-## 🛠️ Technical Architecture
-
-### Core Technologies
-- **Manifest V3** - Latest Chrome extension standard
-- **Content Scripts** - Page injection and data interception
-- **Service Worker** - Background data processing
-- **IndexedDB** - Local data storage
-- **Chrome Storage API** - Configuration synchronization
-
-### File Structure
-```
-xhs-collector/
-├── manifest.json          # Extension configuration
-├── background.js          # Service Worker
-├── injector.js            # API interception script (MAIN world)
-├── bridge.js              # Bridge script (ISOLATED world)
-├── ai-panel.css           # AI panel styles
-├── onboarding.html / .js  # First-run onboarding page
-├── lib/storage.js         # IndexedDB wrapper
-├── popup/                 # Popup & settings UI
-│   ├── popup.html / .css / .js
-│   └── settings.html / .css / .js
-├── icons/                 # Icon resources
-└── package.sh             # Packaging script
+```bash
+node mcp/server.mjs --corpus mcp/sample-corpus.json
 ```
 
----
+The process waiting for stdio MCP requests is expected. In normal use, an MCP client such as Claude Desktop, Cursor, or Cline starts it for you.
 
-## 🤝 Contributing
+## Quick start: browser extension
 
-Contributions, bug reports, and suggestions are welcome!
+1. Open the [Xiaohongshu website](https://www.xiaohongshu.com/) and browse normally. The extension passively collects public notes you view.
+2. Open the extension popup to view statistics, start auto-browsing, or export data.
+3. For AI analysis, choose a provider in Settings, enter your own API key, and test the connection.
+4. Open the AI panel on a note, feed, or creator page and select an analysis mode.
 
-### Report Issues
-- Go to [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) page
-- Describe the problem and reproduction steps
-- Attach screenshots or error messages
+Image limits, video frame count, auto-browse speed, and request frequency are configurable. Start with the conservative or balanced preset.
 
-### Submit Code
-1. Fork this project
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+## MCP + CLI Bridge
 
----
+The MCP server supports two independent data sources. You can enable either one or both.
 
-## 📄 License
+### Option 1: query an exported local corpus
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+In the extension popup, choose **Data Export → JSON** and save it as, for example, `~/xhs-corpus.json`. Then configure your MCP client:
 
----
+```json
+{
+  "mcpServers": {
+    "xhs": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/xiaohongshu-content-collector/mcp/server.mjs",
+        "--corpus",
+        "/ABSOLUTE/PATH/xhs-corpus.json"
+      ]
+    }
+  }
+}
+```
 
-## 🙏 Acknowledgments
+- Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Cursor: `.cursor/mcp.json` in your project
+- Cline: `cline_mcp_settings.json`
 
-- Thanks to [OpenRouter](https://openrouter.ai/) for multi-model API support
-- Thanks to all contributors and users for their support
+The server reloads the corpus on every tool call. Exporting to the same file updates the data without a restart.
 
----
+### Option 2: enable live, read-only queries
 
-## 📮 Contact
+Install and authenticate `xiaohongshu-cli`:
 
-- Bug Reports: [GitHub Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues)
-- Feature Requests: [GitHub Discussions](https://github.com/fancyyan/xiaohongshu-content-collector/discussions)
-- Email: fancyyan@icloud.com
+```bash
+uv tool install xiaohongshu-cli
+xhs login
+xhs status
+```
 
----
+If `xhs` is not available on the MCP client's `PATH`, append this to the `args` array above:
+
+```json
+["--xhs-bin", "/ABSOLUTE/PATH/TO/xhs"]
+```
+
+Environment variables are also supported:
+
+```text
+XHS_CLI_BIN=/absolute/path/to/xhs
+XHS_CLI_TIMEOUT_MS=45000
+XHS_CORPUS=/absolute/path/to/xhs-corpus.json
+```
+
+The CLI Bridge defaults to a 45-second timeout, configurable from 5 to 120 seconds. Live calls are serialized, comments are never auto-paginated to completion, and like, favorite, comment, follow, delete, and publish actions are not exposed.
+
+### Tool reference
+
+| Tool | Source | Purpose |
+|---|---|---|
+| `search_notes` | Local corpus | Search by keyword, source, type, or tag |
+| `get_note` | Local corpus | Read a complete note by `noteId` |
+| `list_creators` | Local corpus | Aggregate notes and engagement by creator |
+| `stats` | Local corpus | Summarize counts, sources, types, dates, and tags |
+| `trending_tags` | Local corpus | Return frequent tags and examples |
+| `recent_notes` | Local corpus | Return the latest collected notes |
+| `xhs_status` | CLI | Check authentication status |
+| `xhs_search` | CLI | Search notes live |
+| `xhs_read` | CLI | Read one note in detail |
+| `xhs_comments` | CLI | Read one page of comments |
+| `xhs_hot` | CLI | Read a category's trending feed |
+
+See [mcp/README.md](mcp/README.md) for protocol details, schemas, and local debugging.
+
+### Example prompts
+
+- “Search for five recent camping notes and compare their title hooks and engagement structure.”
+- “Find the most frequent tags in my local corpus and suggest five differentiated topics.”
+- “Search live for road-bike posts, read the top result and one page of comments, then summarize user pain points.”
+- “Find the highest-engagement creator in my corpus and produce a creator profile and content pillars.”
+
+## Privacy and security
+
+- Collected data is stored in the browser's local IndexedDB by default; this project does not provide a cloud data store.
+- Text or images are sent to your configured AI provider only when you explicitly run AI analysis.
+- Local corpus tools do not access Xiaohongshu. Live `xhs_*` tools access it through your local CLI.
+- The MCP server does not read extension API keys, modify the corpus, or open a network port.
+- CLI subprocesses do not use a shell, are restricted to a read-only allowlist, and redact temporary credential fields from output.
+- Never commit exported corpora, cookies, tokens, API keys, or logs containing personal information.
+
+## Development and testing
+
+```bash
+node --test mcp/server.test.mjs
+node --check mcp/server.mjs
+```
+
+Project layout:
+
+```text
+xiaohongshu-content-collector/
+├── manifest.json           # Chrome extension manifest
+├── background.js           # Service Worker
+├── injector.js             # Page API interception
+├── bridge.js               # Data and AI panel bridge
+├── popup/                  # Popup and settings UI
+├── lib/storage.js          # IndexedDB wrapper
+└── mcp/
+    ├── server.mjs          # Dependency-free MCP server
+    ├── server.test.mjs     # Integration tests
+    ├── sample-corpus.json  # Sample corpus
+    └── README.md           # MCP developer documentation
+```
+
+## FAQ
+
+**Can I use it without an AI API key?**  Yes. Collection, export, and local corpus MCP tools do not require an AI API key.
+
+**Does video analysis upload the original video?**  No. Frames are extracted locally in the browser, and only the selected JPEG frames are sent to your configured AI provider.
+
+**Why does a live tool return `cli_not_found`?**  MCP clients often do not inherit your terminal's full `PATH`. Set `--xhs-bin` to the absolute path of the `xhs` executable.
+
+**Why does a live tool report that I am logged out or need verification?**  Run `xhs login` and `xhs status` on the same machine first. Authentication and verification are managed by `xiaohongshu-cli`.
+
+**How do I refresh the local corpus?**  Export to the same JSON file again. The MCP server reloads it on every call.
+
+## Contributing
+
+Use [Issues](https://github.com/fancyyan/xiaohongshu-content-collector/issues) for bugs and suggestions, or fork the project and open a pull request. Run the MCP tests before submitting and verify that your changes contain no credentials or personal corpus data.
+
+## License
+
+[MIT](LICENSE)
 
 <div align="center">
 
-**⭐ If this project helps you, please give it a Star!**
+If this project helps you, a ⭐ is appreciated.
 
 Made with ❤️ by [Fancy Yan](https://github.com/fancyyan)
 
