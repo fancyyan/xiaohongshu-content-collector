@@ -95,18 +95,21 @@ const API_PROVIDERS = {
   },
   google: {
     name: 'Google AI',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
+    endpoint: GoogleAI.endpoint,
+    modelsEndpoint: GoogleAI.endpoint,
+    modelsFetchNeedsKey: true,
     keyPlaceholder: 'AIza...',
-    keyLink: 'https://makersuite.google.com/app/apikey',
+    keyLink: 'https://aistudio.google.com/apikey',
     hint: [
-      'Gemini 官方 API',
+      'Gemini 官方 API；模型可用性取决于账号权限、地区及配额',
+      '填写 API Key 后可先刷新模型列表，再选择模型并测试连接',
+      '刷新结果仅保留支持 generateContent 的模型；图文分析请选择支持图片输入、文本输出的 Gemini 模型',
       '需要 Google 账号',
-      '获取 API Key：<a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a>',
+      '获取 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>',
     ],
     models: [
-      { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash（推荐）' },
-      { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-      { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash（便宜）' },
+      { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash（多模态·稳定版）' },
+      { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite（多模态·低成本）' },
     ]
   },
   deepseek: {
@@ -214,11 +217,16 @@ let apiTestStatus = {
   lastTestedConfig: null // 存储上次测试的配置
 };
 
+// Google 的发现结果只用于当前表单，避免跨 Key 复用权限不同的模型列表。
+let googleModelList = [];
+let apiTestRevision = 0;
+let providerUIRevision = 0;
+let googleKeyRevision = 0;
+
 // 页面加载时初始化
-document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSettings();
   bindEvents();
-  updateProviderUI(); // 初始化供应商 UI
   updateFormSteps(); // 初始化表单步骤状态
 });
 
@@ -267,6 +275,7 @@ function updateFormSteps() {
 // 更新供应商相关的 UI
 async function updateProviderUI(savedApiModel) {
   const provider = document.getElementById('apiProvider').value;
+  const revision = ++providerUIRevision;
 
   // 如果没有选择提供方，不更新UI
   if (!provider || provider === '') {
@@ -294,7 +303,7 @@ async function updateProviderUI(savedApiModel) {
     apiModelContainer.style.display = 'flex';
   }
 
-  // 仅对支持「刷新模型列表」的供应商（目前为 OpenRouter / Qwen）显示刷新按钮
+  // 仅对支持「刷新模型列表」的供应商（OpenRouter / Qwen / Google）显示刷新按钮
   const refreshRow = document.getElementById('modelRefreshRow');
   if (refreshRow) {
     refreshRow.style.display = providerConfig.modelsEndpoint ? 'flex' : 'none';
@@ -303,7 +312,9 @@ async function updateProviderUI(savedApiModel) {
   // 更新模型列表：内置静态清单 ∪ 缓存内上次动态拉取到的模型，按 value 去重，静态居前
   const modelSelect = document.getElementById('apiModel');
   const merged = await buildMergedModelList(provider);
-  const preferred = savedApiModel || '';
+  if (revision !== providerUIRevision || provider !== document.getElementById('apiProvider').value) return;
+  const preferred = provider === 'google' && savedApiModel
+    ? GoogleAI.normalizeModel(savedApiModel) : (savedApiModel || '');
 
   modelSelect.innerHTML = '';
   // 兼容存量用户：若已选模型已不在内置/缓存清单中（更换内置清单后会发生的情形），
@@ -311,7 +322,8 @@ async function updateProviderUI(savedApiModel) {
   if (preferred && !merged.some(m => m.value === preferred)) {
     const cur = document.createElement('option');
     cur.value = preferred;
-    cur.textContent = `（当前）${preferred}`;
+    cur.textContent = provider === 'google'
+      ? `（当前模型未在清单中，请刷新并重新选择）${preferred}` : `（当前）${preferred}`;
     modelSelect.appendChild(cur);
   }
   merged.forEach(model => {
@@ -349,6 +361,7 @@ async function readModelCache(provider) {
 // 合并「内置静态清单」与「缓存动态清单」，按 value 去重
 async function buildMergedModelList(provider) {
   const providerConfig = API_PROVIDERS[provider];
+  if (provider === 'google') return googleModelList.length ? googleModelList : providerConfig.models;
   const merged = [];
   const seen = new Set();
   const push = (m) => { if (m && m.value && !seen.has(m.value)) { seen.add(m.value); merged.push(m); } };
@@ -383,12 +396,11 @@ async function loadSettings() {
       document.getElementById('apiProvider').value = config.apiConfig.provider || 'openrouter';
       await updateProviderUI(config.apiConfig.apiModel); // 更新 UI（传入已存模型，兼容存量迁移）
       document.getElementById('apiKey').value = config.apiConfig.apiKey || '';
-      document.getElementById('apiModel').value = config.apiConfig.apiModel || 'google/gemini-3.7-flash';
       document.getElementById('customEndpoint').value = config.apiConfig.customEndpoint || '';
       document.getElementById('customModel').value = config.apiConfig.customModel || '';
 
       // 如果已有API配置，标记为已测试成功（假设之前保存时已经测试过）
-      if (config.apiConfig.apiKey) {
+      if (config.apiConfig.apiKey && config.apiConfig.provider !== 'google') {
         apiTestStatus.tested = true;
         apiTestStatus.success = true;
         apiTestStatus.lastTestedConfig = {
@@ -399,7 +411,10 @@ async function loadSettings() {
           customModel: config.apiConfig.customModel || ''
         };
       }
+    } else {
+      await updateProviderUI();
     }
+    updateFormSteps();
 
     // 加载自定义 Prompt
     renderCustomPrompts(config.customPrompts || []);
@@ -705,6 +720,9 @@ function bindEvents() {
 
   // API 供应商切换
   document.getElementById('apiProvider').addEventListener('change', () => {
+    googleModelList = [];
+    googleKeyRevision++;
+    document.getElementById('modelRefreshStatus').textContent = '';
     updateProviderUI();
     resetAPITestStatus();
     // 如果选择了提供方，自动聚焦到API Key输入框
@@ -718,13 +736,19 @@ function bindEvents() {
 
   // 监听API配置改变，重置测试状态并更新表单步骤
   document.getElementById('apiKey').addEventListener('input', () => {
+    googleModelList = [];
+    googleKeyRevision++;
+    if (document.getElementById('apiProvider').value === 'google') {
+      document.getElementById('modelRefreshStatus').textContent = '';
+      updateProviderUI(document.getElementById('apiModel').value);
+    }
     resetAPITestStatus();
     updateFormSteps();
   });
   document.getElementById('apiKey').addEventListener('blur', updateFormSteps);
   document.getElementById('apiModel').addEventListener('change', resetAPITestStatus);
 
-  // 「刷新模型列表」按钮（仅 OpenRouter / Qwen 显示）
+  // 「刷新模型列表」按钮（OpenRouter / Qwen / Google）
   const refreshBtn = document.getElementById('btnRefreshModels');
   if (refreshBtn) refreshBtn.addEventListener('click', handleRefreshModels);
   document.getElementById('customEndpoint').addEventListener('input', () => {
@@ -762,6 +786,7 @@ function bindEvents() {
 
 // 重置API测试状态
 function resetAPITestStatus() {
+  apiTestRevision++;
   apiTestStatus.tested = false;
   apiTestStatus.success = false;
   apiTestStatus.lastTestedConfig = null;
@@ -775,7 +800,7 @@ function resetAPITestStatus() {
   }
 }
 
-// 拉取指定供应商的最新模型列表（OpenRouter 免鉴权；Qwen 需带 Key），结果写入本地缓存
+// 拉取最新模型列表；Google 使用当前 Key 的会话清单，其他供应商沿用本地缓存
 async function fetchModelsList(provider) {
   const providerConfig = API_PROVIDERS[provider];
   if (!providerConfig || !providerConfig.modelsEndpoint) {
@@ -783,7 +808,13 @@ async function fetchModelsList(provider) {
   }
   const apiKey = document.getElementById('apiKey').value.trim();
   if (providerConfig.modelsFetchNeedsKey && !apiKey) {
-    throw new Error('请先填写并测试 API Key');
+    throw new Error('请先填写 API Key');
+  }
+  if (provider === 'google') {
+    const revision = googleKeyRevision;
+    const models = await GoogleAI.listModels(apiKey);
+    if (revision === googleKeyRevision) googleModelList = models;
+    return models;
   }
   const headers = providerConfig.modelsFetchNeedsKey ? { 'Authorization': `Bearer ${apiKey}` } : {};
   const resp = await fetch(providerConfig.modelsEndpoint, { method: 'GET', headers });
@@ -816,19 +847,26 @@ async function handleRefreshModels() {
   const btn = document.getElementById('btnRefreshModels');
   const status = document.getElementById('modelRefreshStatus');
   if (!btn || !status) return;
-  const before = document.getElementById('apiModel').value;
+  const revision = googleKeyRevision;
+  const stillCurrent = () => provider === document.getElementById('apiProvider').value && revision === googleKeyRevision;
   btn.disabled = true;
   status.textContent = '⏳ 正在拉取最新模型列表...';
   status.className = 'model-refresh-status loading';
   try {
     const fetched = await fetchModelsList(provider);
+    if (!stillCurrent()) return;
+    const before = document.getElementById('apiModel').value;
     const staticIds = new Set((API_PROVIDERS[provider] && API_PROVIDERS[provider].models || []).map(m => m.value));
     const added = fetched.filter(m => !staticIds.has(m.value)).length;
     await updateProviderUI(before); // 重渲染，保留刚选的模型
-    status.textContent = `✅ 已刷新：共 ${fetched.length} 个可用模型（内置外新增 ${added} 个，缓存 7 天）`;
+    if (!stillCurrent()) return;
+    status.textContent = provider === 'google'
+      ? `✅ 已刷新：${fetched.length} 个支持 generateContent 的模型（本次会话有效，请测试所选模型）`
+      : `✅ 已刷新：共 ${fetched.length} 个可用模型（内置外新增 ${added} 个，缓存 7 天）`;
     status.className = 'model-refresh-status success';
   } catch (e) {
-    status.textContent = `❌ 拉取失败：${e.message}（继续使用内置清单）`;
+    if (!stillCurrent()) return;
+    status.textContent = `❌ 拉取失败：${e.message}（保留当前清单，可稍后重试）`;
     status.className = 'model-refresh-status error';
   } finally {
     btn.disabled = false;
@@ -868,6 +906,16 @@ async function testAPIConnection() {
     }
   }
 
+  if (provider === 'google' && !apiModel) {
+    resultDiv.textContent = '❌ 请先刷新模型列表并选择模型';
+    resultDiv.className = 'error';
+    resultDiv.style.display = 'block';
+    return;
+  }
+
+  resetAPITestStatus();
+  const revision = apiTestRevision;
+
   // 显示测试中状态
   testBtn.disabled = true;
   testBtn.textContent = '测试中...';
@@ -898,15 +946,12 @@ async function testAPIConnection() {
         })
       });
     } else if (provider === 'google') {
-      // Google AI API 格式
-      const modelEndpoint = `${endpoint}/${modelToUse}:generateContent?key=${apiKey}`;
-      response = await fetch(modelEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Hi' }] }]
-        })
+      // 和实际图文分析共用适配器；收到有效文本才视为测试成功。
+      await GoogleAI.generateContent({
+        apiKey, model: modelToUse,
+        messages: [{ role: 'user', content: 'Reply with OK.' }],
       });
+      response = { ok: true };
     } else {
       // OpenAI 兼容格式 (OpenRouter, OpenAI, Custom)
       response = await fetch(endpoint, {
@@ -923,6 +968,7 @@ async function testAPIConnection() {
       });
     }
 
+    if (revision !== apiTestRevision) return;
     if (response.ok) {
       resultDiv.textContent = '✅ 连接成功！API 配置正确，现在可以保存了';
       resultDiv.className = 'success';
@@ -946,6 +992,7 @@ async function testAPIConnection() {
     } else {
       const errorData = await response.json().catch(() => ({}));
       const errorMsg = errorData.error?.message || errorData.message || `HTTP ${response.status}`;
+      if (revision !== apiTestRevision) return;
       resultDiv.textContent = `❌ 连接失败: ${errorMsg}`;
       resultDiv.className = 'error';
 
@@ -955,6 +1002,7 @@ async function testAPIConnection() {
       apiTestStatus.lastTestedConfig = null;
     }
   } catch (error) {
+    if (revision !== apiTestRevision) return;
     resultDiv.textContent = `❌ 连接失败: ${error.message}`;
     resultDiv.className = 'error';
 

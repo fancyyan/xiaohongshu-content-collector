@@ -99,6 +99,14 @@ node mcp/server.mjs --corpus mcp/sample-corpus.json
 
 图片数量、视频截帧数、自动浏览速度和访问频率均可在设置页调整。建议先使用保守或均衡预设。
 
+### Google AI 连接与旧模型升级
+
+选择 Google AI，填写自己的 API Key 后，先点「刷新模型列表」，选择支持图片输入、文本输出的 Gemini 模型，再点「测试连接」并保存。无需先测试成功即可刷新。Google 的发现结果只在当前设置会话中保留，更换 Key 后需要重新刷新。
+
+如果之前保存的是 `gemini-2.0-flash-exp` 或其他不再可用的模型，更新扩展后仍会保留原选择并显示提示，请从刷新结果中重新选择和测试。HTTP 404 通常需要换模型；403 请检查权限与服务可用地区；429 请检查配额/计费。测试成功仅确认当前模型能返回文本，图文能力以模型文档为准。
+
+开发验证及浏览器测试命令见 [Google AI 验证说明](docs/google-ai-validation.md)。
+
 ## MCP + CLI Bridge
 
 MCP server 支持两类数据源，可以只启用其中一种，也可以同时启用。
@@ -191,7 +199,7 @@ CLI Bridge 默认超时 45 秒，允许范围为 5–120 秒。实时调用会�
 ## 开发与测试
 
 ```bash
-node --test mcp/server.test.mjs
+node --test tests/google-ai.test.mjs mcp/server.test.mjs
 node --check mcp/server.mjs
 ```
 

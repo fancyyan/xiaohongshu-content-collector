@@ -68,7 +68,7 @@
       const result = await chrome.storage.sync.get('userConfig');
       if (result.userConfig) {
         USER_CONFIG = result.userConfig;
-        console.log('[XHS Collector] 用户配置已加载', USER_CONFIG);
+        console.log('[XHS Collector] 用户配置已加载');
         // 更新频率控制器
         requestLimiter.maxPerMinute = USER_CONFIG.rateLimit.maxPerMinute;
         requestLimiter.maxPer5Min = USER_CONFIG.rateLimit.maxPer5Min;
@@ -85,7 +85,7 @@
       chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (msg.type === 'UPDATE_CONFIG') {
           USER_CONFIG = msg.config;
-          console.log('[XHS Collector] 配置已更新', USER_CONFIG);
+          console.log('[XHS Collector] 配置已更新');
           // 更新频率控制器
           requestLimiter.maxPerMinute = USER_CONFIG.rateLimit.maxPerMinute;
           requestLimiter.maxPer5Min = USER_CONFIG.rateLimit.maxPer5Min;
@@ -972,6 +972,12 @@
 
   // ---------- 多模态 AI 调用 ----------
 
+  async function callGoogleAI(messages) {
+    const response = await chrome.runtime.sendMessage({ type: 'GOOGLE_AI_GENERATE', messages });
+    if (!response?.ok) throw new Error(response?.error || 'Google AI 后台请求失败，请重新加载扩展');
+    return response.text;
+  }
+
   /**
    * 调用 AI（支持多模态：文字 + 图片）
    * @param {string} systemPrompt
@@ -1003,6 +1009,8 @@
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ];
+
+    if (API_PROVIDER === 'google') return callGoogleAI(messages);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000);
@@ -1050,6 +1058,8 @@
         return { role: msg.role, content: msg.content };
       }
     });
+
+    if (API_PROVIDER === 'google') return callGoogleAI(messages);
 
     const controller2 = new AbortController();
     const timeout2 = setTimeout(() => controller2.abort(), 120000);
