@@ -1010,6 +1010,12 @@
       { role: 'user', content: userContent },
     ];
 
+    const limitCheck = requestLimiter.checkRequest();
+    if (!limitCheck.allowed) {
+      throw new Error(`AI 请求过于频繁，请等待约 ${Math.ceil(limitCheck.waitTime / 1000)} 秒后重试`);
+    }
+    requestLimiter.recordRequest();
+
     if (API_PROVIDER === 'google') return callGoogleAI(messages);
 
     const controller = new AbortController();
@@ -1058,6 +1064,12 @@
         return { role: msg.role, content: msg.content };
       }
     });
+
+    const limitCheck2 = requestLimiter.checkRequest();
+    if (!limitCheck2.allowed) {
+      throw new Error(`AI 请求过于频繁，请等待约 ${Math.ceil(limitCheck2.waitTime / 1000)} 秒后重试`);
+    }
+    requestLimiter.recordRequest();
 
     if (API_PROVIDER === 'google') return callGoogleAI(messages);
 
