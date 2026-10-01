@@ -2,6 +2,8 @@
  * 小红书内容收集器 - Background Service Worker
  */
 
+importScripts('lib/google-ai.js');
+
 // ========== 错误处理工具 ==========
 
 /**
@@ -435,9 +437,24 @@ class StorageManager {
 
 const storage = new StorageManager();
 
+async function handleGoogleAI(messages) {
+  const { userConfig } = await chrome.storage.sync.get('userConfig');
+  const config = userConfig?.apiConfig;
+  if (config?.provider !== 'google' || !config.apiKey || !config.apiModel) {
+    throw new Error('请先在设置页配置并测试 Google AI');
+  }
+  return GoogleAI.generateContent({ apiKey: config.apiKey, model: config.apiModel, messages });
+}
+
 // ========== 消息处理 ==========
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'GOOGLE_AI_GENERATE') {
+    handleGoogleAI(msg.messages)
+      .then(text => sendResponse({ ok: true, text }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (msg.type === 'SAVE_POSTS') {
     handleSavePosts(msg.posts).then(r => sendResponse(r)).catch(e => sendResponse(createErrorResponse(e)));
     return true;

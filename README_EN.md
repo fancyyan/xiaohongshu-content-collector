@@ -99,6 +99,14 @@ The process waiting for stdio MCP requests is expected. In normal use, an MCP cl
 
 Image limits, video frame count, auto-browse speed, and request frequency are configurable. Start with the conservative or balanced preset.
 
+### Google AI setup and model upgrades
+
+Select Google AI, enter your own API key, then refresh the model list before testing. Choose a Gemini model with image input and text output, test the connection, and save. Discovery does not require a successful connection test. Its results are kept only for the current settings session and cleared when the key changes.
+
+Previously saved models such as `gemini-2.0-flash-exp` remain selected with a warning until you choose and test a replacement. For HTTP 404, refresh and select an available model; for 403, check permissions and supported regions; for 429, check quota and billing. A successful text test does not verify image support.
+
+See [Google AI validation notes](docs/google-ai-validation.md) for development checks and browser test commands.
+
 ## MCP + CLI Bridge
 
 The MCP server supports two independent data sources. You can enable either one or both.
@@ -191,7 +199,7 @@ See [mcp/README.md](mcp/README.md) for protocol details, schemas, and local debu
 ## Development and testing
 
 ```bash
-node --test mcp/server.test.mjs
+node --test tests/google-ai.test.mjs mcp/server.test.mjs
 node --check mcp/server.mjs
 ```
 
